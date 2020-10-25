@@ -1,0 +1,23 @@
+version: '3.3'
+services:
+    influxdb:
+        environment:
+            INFLUXDB_REPORTING_DISABLED: "true"
+            INFLUXDB_GRAPHITE_ENABLED: "true"
+            INFLUXDB_GRAPHITE_TEMPLATES: "measurement.field*"
+            INFLUXDB_GRAPHITE_DATABASE: "telegraf"
+            INFLUXDB_RETENTION_ENABLED: "true"
+            INFLUXDB_RETENTION_CHECK_INTERVAL: "10m0s"
+            INFLUXDB_GRAPHITE_BATCH_SIZE: "1"
+            INFLUXDB_GRAPHITE_BATCH_PENDING: "1"
+        image: "influxdb"
+        ports:
+            - "8086:8086"
+            - "2003:2003"
+    telegraf:
+        hostname: apphost
+        links:
+            - influxdb:influxdb
+        image: "telegraf"
+        volumes:
+            - ${PWD}/../configs/telegraf.conf:/etc/telegraf/telegraf.conf:ro
