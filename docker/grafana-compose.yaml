@@ -1,8 +1,8 @@
-version: '3.3'
+version: "3.3"
 services:
-    grafana:
-        image: "grafana/grafana"
-        ports:
-            - "3000:3000"
-        links:
-            - influxdb:influxdb
+  grafana:
+    image: "grafana/grafana"
+    ports:
+      - "3000:3000"
+    links:
+      - influxdb:influxdb
