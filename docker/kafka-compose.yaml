@@ -1,0 +1,26 @@
+version: '3'
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+  kafka:
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+    environment:
+    # remember to change this host address to the actual network
+      KAFKA_ADVERTISED_HOST_NAME: 192.168.1.12
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    ports:
+      - "9100:9000"
+    links:
+      - "kafka:kafka"
+    environment:
+      KAFKA_BROKERCONNECT: kafka:9092
+      JVM_OPTS: -Xms32M -Xmx64M
+      SERVER_SERVLET_CONTEXTPATH: /
