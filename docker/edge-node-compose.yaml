@@ -2,10 +2,10 @@ version: "3.7"
 services:
     rabbitmq3:
         image: rabbitmq:3-management
-    ports:
-        - "15672:15672"
-        - "5672:5672"
-    environment:
-        RABBITMQ_ERLANG_COOKIE: 'secret cookie here'
-    volumes:
-        - ./db:/var/lib/rabbitmq/mnesia/rabbit@rabbitmq3
+        ports:
+            - "15672:15672"
+            - "5672:5672"
+        environment:
+            RABBITMQ_ERLANG_COOKIE: 'secret cookie here'
+        volumes:
+            - ./db:/var/lib/rabbitmq/mnesia/rabbit@rabbitmq3
