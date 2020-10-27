@@ -1,26 +1,26 @@
 version: "3.7"
 services:
-    rabbitmq3:
-        image: rabbitmq:3-management-alpine
-        ports:
-            - "15672:15672"
-            - "5672:5672"
-        environment:
-            RABBITMQ_ERLANG_COOKIE: 'secret cookie here'
-        volumes:
-            - ./db:/var/lib/rabbitmq/mnesia/rabbit@rabbitmq3
-        networks:
-            - edge
-        restart: always
+  rabbitmq3:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "secret cookie here"
+    volumes:
+      - ./db:/var/lib/rabbitmq/mnesia/rabbit@rabbitmq3
+    networks:
+      - edge
+    restart: always
 
-    sensor:
-        image: trhoangtuan96/edge-sensor:latest
-        networks:
-            - edge
-        depends_on:
-            - rabbitmq3
-        restart: always
-    
+  sensor:
+    image: trhoangtuan96/edge-sensor:latest
+    networks:
+      - edge
+    depends_on:
+      - rabbitmq3
+    restart: always
+
 networks:
-    edge:
-        driver: bridge
+  edge:
+    driver: bridge
