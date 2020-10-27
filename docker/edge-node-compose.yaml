@@ -20,6 +20,8 @@ services:
         depends_on:
             - rabbitmq3
         restart: always
+        volumes:
+            - ./../sensors:/sensors
     
 networks:
     edge:

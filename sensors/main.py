@@ -3,9 +3,6 @@ import sensorlib
 import time
 
 def main():
-    hostName: str = os.environ.get('HOSTNAME')
-    port: int = int(os.environ.get('PORT'))
-    topic: str = os.environ.get('TOPIC')
     connector: sensorlib.SimpleRMQTopicConnection = sensorlib.SimpleRMQTopicConnection(sensorlib.RMQConfig(
         "rabbitmq3",
         5672,
