@@ -5,23 +5,19 @@ import (
 	"log"
 
 	"github.com/spf13/viper"
+	"github.com/tinhtn1508/edge-computing-for-monitor/commonlibs/gokafka"
+	"github.com/tinhtn1508/edge-computing-for-monitor/commonlibs/gormq"
 )
 
 // Config holds all the configurations of the tool
 type Config struct {
-	Kafka struct {
-		Host          string   `mapstructure:"host"`
-		Port          int      `mapstructure:"port"`
-		Brokers       []string `mapstructure:"brokers"`
-		DialerTimeout int      `mapstructure:"dialer-timeout"`
-		WriteTimeout  int      `mapstructure:"write-timeout"`
-		ReadTimeout   int      `mapstructure:"read-timeout"`
-	} `mapstructure:"kafka"`
+	KafkaConfig gokafka.KafkaConfig  `mapstructure:"kafka"`
+	RMQConfig   gormq.RabbitMQConfig `mapstructure:"rabbitmq"`
 }
 
 // GetKafkaHost produces kafka hostname
 func (cfg *Config) GetKafkaHost() string {
-	return fmt.Sprintf("%s:%d", cfg.Kafka.Host, cfg.Kafka.Port)
+	return fmt.Sprintf("%s:%d", cfg.KafkaConfig.Host, cfg.KafkaConfig.Port)
 }
 
 var values Config

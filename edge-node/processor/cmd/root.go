@@ -16,12 +16,9 @@ var log *zap.SugaredLogger
 var globalContext context.Context
 
 var rootCmd = &cobra.Command{
-	Use:   "",
-	Short: "There is nothing here!",
-	Long: `This command is just here for fun.
-            Please choose a chapter to go with`,
+	Use: "",
 	Run: func(cmd *cobra.Command, args []string) {
-
+		log.Infof("hello")
 	},
 }
 
