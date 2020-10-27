@@ -1,9 +1,13 @@
+import os
 import sensorlib
 import time
 
 def main():
+    hostName: str = os.environ.get('HOSTNAME')
+    port: int = int(os.environ.get('PORT'))
+    topic: str = os.environ.get('TOPIC')
     connector: sensorlib.SimpleRMQTopicConnection = sensorlib.SimpleRMQTopicConnection(sensorlib.RMQConfig(
-        "localhost",
+        "rabbitmq3",
         5672,
         "measurment",
         "measurement.sensors.sensor1",
@@ -15,7 +19,8 @@ def main():
         callTo(lambda x: connector.send(x)).\
         initialize()
     sensor.start()
-    time.sleep(60)
+    while True:
+        time.sleep(60)
     sensor.stop()
 
 if __name__ == "__main__":
