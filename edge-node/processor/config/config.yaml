@@ -6,3 +6,12 @@ kafka:
     dialer-timeout: 1
     write-timeout: 10
     read-timeout: 10
+rabbitmq:
+    host: "rabbitmq3"
+    port: 5672
+    username: "guest"
+    password: "guest"
+    exchange: "measurement"
+    queues:
+        - "measurement.sensors.sensor1"
+    
