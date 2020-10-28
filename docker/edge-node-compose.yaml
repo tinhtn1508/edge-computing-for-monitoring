@@ -1,28 +1,56 @@
-version: "3.7"
+version: "3.3"
 services:
-    rabbitmq3:
-        image: rabbitmq:3-management-alpine
-        ports:
-            - "15672:15672"
-            - "5672:5672"
-        environment:
-            RABBITMQ_ERLANG_COOKIE: 'secret cookie here'
-        volumes:
-            - ./db:/var/lib/rabbitmq/mnesia/rabbit@rabbitmq3
-        networks:
-            - edge
-        restart: always
+  rabbitmq3:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "secret cookie here"
+    volumes:
+      - ./db:/var/lib/rabbitmq/mnesia/rabbit@rabbitmq3
+    networks:
+      - edge
+    restart: always
 
-    sensor:
-        image: trhoangtuan96/edge-sensor:latest
-        networks:
-            - edge
-        depends_on:
-            - rabbitmq3
-        restart: always
-        volumes:
-            - ./../sensors:/sensors
-    
+  sensor:
+    image: trhoangtuan96/edge-sensor:latest
+    networks:
+      - edge
+    depends_on:
+      - rabbitmq3
+    restart: always
+    volumes:
+      - ./../sensors:/sensors
+
+  processor:
+    image: trhoangtuan96/edge-processor:latest
+    networks:
+      - edge
+    depends_on:
+      - rabbitmq3
+    restart: always
+    volumes:
+      - ./../edge-node/processor:/app
+
+  # influxdb:
+  #   image: "influxdb"
+  #   ports:
+  #     - "8086:8086"
+  #   volumes:
+  #     - "../configs/influxdb.conf:/etc/influxdb/influxdb.conf"
+  #   networks:
+  #     - edge
+
+  # grafana:
+  #   image: "grafana/grafana"
+  #   ports:
+  #     - "3000:3000"
+  #   links:
+  #     - influxdb:influxdb
+  #   networks:
+  #     - edge
+
 networks:
-    edge:
-        driver: bridge
+  edge:
+    driver: bridge
