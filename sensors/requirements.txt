@@ -1,3 +1,6 @@
 loguru
 pika
 numpy
+flask
+flask_script
+flask_restful

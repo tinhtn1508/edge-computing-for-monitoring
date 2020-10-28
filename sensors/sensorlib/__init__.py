@@ -21,3 +21,7 @@ from .rabbitmq_connector import (
     RMQConfig,
     SimpleRMQTopicConnection,
 )
+
+from .sensor_app import (
+    sensorApp,
+)
