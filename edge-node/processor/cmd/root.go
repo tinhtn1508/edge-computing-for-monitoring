@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/config"
+	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/core"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/rmq"
 	"go.uber.org/zap"
 )
@@ -21,26 +22,28 @@ var rootCmd = &cobra.Command{
 	Use: "",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Infof("hello")
-		processors := make(map[string]rmq.DataConsumeFunc)
+		processor := core.NewCoreProcessor(core.CoreProcessorConfig{
+			log,
+			config.GetConfig().CoreConfig,
+		})
 		for _, q := range config.GetConfig().RMQConfig.Queues {
-			processors[q] = func(appid string, timestamp time.Time, body []byte) error {
-				log.Infof("[%s - %s] Body: %s", appid, timestamp.String(), string(body))
-				return nil
-			}
+			processor.AddConsumingTask(q)
 		}
 		consumer, err := rmq.NewTopicConsumer(rmq.RabbitMQConsumerConfig{
 			Log:              log,
 			ServerURL:        config.GetConfig().RMQConfig.GetUrl(),
 			Exchange:         config.GetConfig().RMQConfig.Exchange,
-			QueuesProcessors: processors,
+			QueuesProcessors: processor.GetHandlerMap(),
 		})
 
 		if err != nil {
 			log.Fatalf("Error while creating consumer: %s", err)
 		}
 		consumer.Start()
+		defer consumer.Stop()
+		processor.Start()
+		defer processor.Stop()
 		time.Sleep(60 * time.Second)
-		consumer.Stop()
 	},
 }
 

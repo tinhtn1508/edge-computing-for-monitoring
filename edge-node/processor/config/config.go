@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/spf13/viper"
+	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/core"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/kafka"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/rmq"
 )
@@ -13,6 +14,7 @@ import (
 type Config struct {
 	KafkaConfig kafka.KafkaConfig  `mapstructure:"kafka"`
 	RMQConfig   rmq.RabbitMQConfig `mapstructure:"rabbitmq"`
+	CoreConfig  core.CoreConfig    `mapstructure:"core"`
 }
 
 // GetKafkaHost produces kafka hostname

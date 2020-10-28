@@ -14,4 +14,6 @@ rabbitmq:
     exchange: "measurement"
     queues:
         - "measurement.sensors.sensor1"
-    
+core:
+    record-lifetime: 1500ms
+    collect-interval: 1s
