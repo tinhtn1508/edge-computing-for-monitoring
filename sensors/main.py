@@ -5,9 +5,9 @@ def main():
     connector: sensorlib.SimpleRMQTopicConnection = sensorlib.SimpleRMQTopicConnection(sensorlib.RMQConfig(
         "rabbitmq3",
         5672,
-        "measurment",
+        "measurement",
         "measurement.sensors.sensor1",
-        ["measurement.sensors.*"],
+        ["measurement.sensors.sensor1"],
         sensorlib.MessageType.TEXT,
     ))
     sensor: sensorlib.Sensor = sensorlib.Sensor(sensorlib.SignalType.SINEWAVE, 10).\

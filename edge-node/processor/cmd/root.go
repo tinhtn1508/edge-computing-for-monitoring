@@ -6,9 +6,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/config"
+	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/rmq"
 	"go.uber.org/zap"
 )
 
@@ -19,6 +21,26 @@ var rootCmd = &cobra.Command{
 	Use: "",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Infof("hello")
+		processors := make(map[string]rmq.DataConsumeFunc)
+		for _, q := range config.GetConfig().RMQConfig.Queues {
+			processors[q] = func(appid string, timestamp time.Time, body []byte) error {
+				log.Infof("[%s - %s] Body: %s", appid, timestamp.String(), string(body))
+				return nil
+			}
+		}
+		consumer, err := rmq.NewTopicConsumer(rmq.RabbitMQConsumerConfig{
+			Log:              log,
+			ServerURL:        config.GetConfig().RMQConfig.GetUrl(),
+			Exchange:         config.GetConfig().RMQConfig.Exchange,
+			QueuesProcessors: processors,
+		})
+
+		if err != nil {
+			log.Fatalf("Error while creating consumer: %s", err)
+		}
+		consumer.Start()
+		time.Sleep(60 * time.Second)
+		consumer.Stop()
 	},
 }
 

@@ -29,10 +29,10 @@ class SimpleRMQTopicConnection(object):
         self._channel.exchange_declare(
             config.exchange, 
             exchange_type = "topic", 
-            durable = False    
+            durable = True
         )
         for q in config.queues:
-            self._channel.queue_declare(q)
+            self._channel.queue_declare(q, durable = True)
             self._channel.queue_bind(q, config.exchange)
         self._exchange: str = config.exchange
         self._topic: str = config.topic

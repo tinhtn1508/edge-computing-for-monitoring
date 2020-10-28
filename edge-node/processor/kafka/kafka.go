@@ -1,4 +1,4 @@
-package gokafka
+package kafka
 
 // KafkaConfig is used to config for Kafka connection instances
 type KafkaConfig struct {
