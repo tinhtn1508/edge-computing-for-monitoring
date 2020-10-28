@@ -50,7 +50,7 @@ class SimpleRMQTopicConnection(object):
         try:
             self._channel.basic_publish(
                 self._exchange,
-                "meow.meow",
+                self._topic,
                 messStr,
                 mandatory = True,
             )
