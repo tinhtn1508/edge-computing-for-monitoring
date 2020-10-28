@@ -1,8 +1,7 @@
 import pika
 import json
 from enum import Enum
-from typing import Any
-from functools import partial
+from typing import Any, List
 from dataclasses import dataclass
 from pika.connection import Connection
 from pika.channel import Channel
@@ -18,6 +17,7 @@ class RMQConfig(object):
     port: int
     exchange: str
     topic: str
+    queues: List[str]
     messageType: MessageType
 
 class SimpleRMQTopicConnection(object):
@@ -31,8 +31,9 @@ class SimpleRMQTopicConnection(object):
             exchange_type = "topic", 
             durable = False    
         )
-        self._channel.queue_declare(config.topic)
-        self._channel.queue_bind(config.topic, config.exchange)
+        for q in config.queues:
+            self._channel.queue_declare(q)
+            self._channel.queue_bind(q, config.exchange)
         self._exchange: str = config.exchange
         self._topic: str = config.topic
         self._messageType: MessageType = config.messageType
@@ -54,7 +55,7 @@ class SimpleRMQTopicConnection(object):
                 mandatory = True,
             )
         except pika.exceptions.UnroutableError:
-            loguru.error("Message was returned")
+            logger.error("Message was returned")
 
     def close(self):
         if self._connector is not None:

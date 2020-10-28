@@ -1,4 +1,3 @@
-import os
 import sensorlib
 import time
 
@@ -8,6 +7,7 @@ def main():
         5672,
         "measurment",
         "measurement.sensors.sensor1",
+        ["measurement.sensors.*"],
         sensorlib.MessageType.TEXT,
     ))
     sensor: sensorlib.Sensor = sensorlib.Sensor(sensorlib.SignalType.SINEWAVE, 10).\
