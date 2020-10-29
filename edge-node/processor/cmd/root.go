@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/config"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/core"
+	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/kafka"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/rmq"
 	"go.uber.org/zap"
 )
@@ -22,9 +23,34 @@ var rootCmd = &cobra.Command{
 	Use: "",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Infof("hello")
+		kafkaClient := kafka.NewTcpKafkaConnector(kafka.TcpKafkaConnectorDeps{
+			Log:     log,
+			Ctx:     globalContext,
+			Timeout: 500 * time.Millisecond,
+			Host:    config.GetConfig().KafkaConfig.Host,
+		})
+		if err := kafkaClient.Open(); err != nil {
+			log.Fatalf("error while opening kafka connection: %s", err)
+		}
+		if err := kafkaClient.CreateTopics(config.GetConfig().KafkaConfig.Topic, 1, 1); err != nil {
+			log.Fatalf("error while creating kafka topic: %s", err)
+		}
+		kafkaWritter := kafka.NewSimpleProducer(kafka.SimpleProducerConfig{
+			Log:       log,
+			Ctx:       globalContext,
+			Topic:     config.GetConfig().KafkaConfig.Topic,
+			Brokers:   config.GetConfig().KafkaConfig.Brokers,
+			Batchsize: 1,
+			Timeout:   config.GetConfig().KafkaConfig.WriteTimeout,
+		})
+		if err := kafkaWritter.Start(); err != nil {
+			log.Fatalf("Cannot initialize kafka writter, error: %s", err)
+		}
 		processor := core.NewCoreProcessor(core.CoreProcessorConfig{
 			log,
 			config.GetConfig().CoreConfig,
+			kafkaWritter.Produce,
+			"measurement",
 		})
 		for _, q := range config.GetConfig().RMQConfig.Queues {
 			processor.AddConsumingTask(q)

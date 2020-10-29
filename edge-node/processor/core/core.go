@@ -1,7 +1,9 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -9,6 +11,8 @@ import (
 
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/rmq"
 )
+
+type PublishFunc func([]byte, []byte) error
 
 type Record struct {
 	AppID     string
@@ -22,8 +26,10 @@ type CoreConfig struct {
 }
 
 type CoreProcessorConfig struct {
-	Log        *zap.SugaredLogger
-	CoreConfig CoreConfig
+	Log             *zap.SugaredLogger
+	CoreConfig      CoreConfig
+	PublishCallback PublishFunc
+	InfoKey         string
 }
 
 type ICoreProcessor interface {
@@ -42,6 +48,8 @@ type CoreProcessor struct {
 	collectInterval time.Duration
 	handlerTable    map[string]rmq.DataConsumeFunc
 	recordTable     map[string]Record
+	publishFunc     PublishFunc
+	infoKey         string
 }
 
 func NewCoreProcessor(cfg CoreProcessorConfig) ICoreProcessor {
@@ -53,6 +61,8 @@ func NewCoreProcessor(cfg CoreProcessorConfig) ICoreProcessor {
 		collectInterval: cfg.CoreConfig.CollectInterval,
 		handlerTable:    make(map[string]rmq.DataConsumeFunc),
 		recordTable:     make(map[string]Record),
+		publishFunc:     cfg.PublishCallback,
+		infoKey:         cfg.InfoKey,
 	}
 }
 
@@ -60,12 +70,23 @@ func (p *CoreProcessor) collect() {
 	p.RLock()
 	defer p.RUnlock()
 	p.log.Infof("dang collect ne")
+	aggregated := make(map[string]float64)
 	for k, v := range p.recordTable {
 		if v.Timestamp.Add(p.recordLifetime).Unix() < time.Now().Unix() {
 			p.log.Errorf("Cai record nay (%s) --- %+v --- expire nha", k, v)
 		} else {
 			p.log.Infof("Cai record nay (%s) valid ne: %+v", k, v)
+			if f, err := strconv.ParseFloat(string(v.Body), 64); err == nil {
+				aggregated[k] = f
+			} else {
+				p.log.Errorf("Malformed number: %s / Error: %s", v.Body, err)
+			}
 		}
+	}
+	if bjson, err := json.Marshal(aggregated); err != nil {
+		p.log.Errorf("Cannot produce json for %+v / Error: %s", aggregated, err)
+	} else if p.publishFunc != nil {
+		p.publishFunc([]byte(fmt.Sprintf("%s-%d", p.infoKey, time.Now().Unix())), bjson)
 	}
 	p.log.Infof("can phai aggregate info ne")
 }

@@ -97,7 +97,7 @@ func (c *TopicConsumer) consumingWorker(queue string, consume DataConsumeFunc) e
 	}
 
 	for message := range iter {
-		if err := consume(message.AppId, message.Timestamp, message.Body); err != nil {
+		if err := consume(queue, time.Now(), message.Body); err != nil {
 			c.log.Errorf("error occurs while consuming message from appid %s. Error = %s",
 				message.AppId, err,
 			)

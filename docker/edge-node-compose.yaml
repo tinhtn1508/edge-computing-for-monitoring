@@ -27,6 +27,7 @@ services:
     image: trhoangtuan96/edge-processor:latest
     networks:
       - edge
+      - docker_fog
     depends_on:
       - rabbitmq3
     restart: always
@@ -54,3 +55,5 @@ services:
 networks:
   edge:
     driver: bridge
+  docker_fog:
+    external: true
