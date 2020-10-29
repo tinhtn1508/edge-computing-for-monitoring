@@ -1,0 +1,13 @@
+version: '3'
+services:
+  redis-server: 
+    image: 'redis'
+    ports:
+      - "6379:6379"
+  email-service:
+    build: .
+    env_file:
+      - .env
+    # environment:
+    #   - NODE_ENV=production
+    
