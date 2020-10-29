@@ -38,7 +38,7 @@ docker run \
   -e POSTGRES_DB=catalog \
   -e POSTGRES_USER=catalog \
   -e POSTGRES_PASSWORD=catalog \
-  -v /Users/hungpham/Documents/Master/HKIII/BIGDATA/source/edge-computing-for-monitor/fog-node/catalog/data:/var/lib/postgresql/data \
+  -v ${PWD}/data:/var/lib/postgresql/data \
   -p 5432:5432 \
   -d postgres
 ```
