@@ -1,11 +1,10 @@
 kafka:
-    host: "127.0.0.1"
+    host: kafka
     port: 9092
     brokers:
-        - "127.0.0.1:9092"
-    dialer-timeout: 1
-    write-timeout: 10
-    read-timeout: 10
+        - "kafka:9092"
+    write-timeout: 500ms
+    topic: measurement
 rabbitmq:
     host: "rabbitmq3"
     port: 5672
