@@ -1,3 +1,5 @@
+import yaml
+from dataclasses import dataclass
 from typing import Any
 from .signal_generator import (
     WaveConfig,
@@ -48,13 +50,21 @@ DEFAULT_SENSOR_CONFIG: sensorConfigType = {
 
 sensorConfig: sensorConfigType = DEFAULT_SENSOR_CONFIG
 
+@dataclass
+class ServerConfig(object):
+    host: str
+    port: int
+
+
 class CustomServer(Server):
     def __call__(self, app, *args, **kwargs):
-        sensorApp.startSensor()
-        sensorApp.sensorIsStart = True
+        SensorApplication.getInstance().startSensor()
+        SensorApplication.getInstance().sensorIsStart = True
         return Server.__call__(self, app, *args, **kwargs)
 
+
 class SensorConfigAPI(Resource):
+    """/api/v1/sensorconfig"""
     def __init__(self):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument('sensorType', type=str, required=True, location='json')
@@ -65,43 +75,77 @@ class SensorConfigAPI(Resource):
         self.reqparse.add_argument('wavePoint', type=int, required=True, location='json')
         super(SensorConfigAPI, self).__init__()
 
-    def get(self):
-        return marshal(sensorApp.sensorConfig, sensorConfigFields)
+    def get(self) -> marshal:
+        return marshal(SensorApplication.getInstance().sensorConfig, sensorConfigFields)
 
-    def put(self):
+    def put(self) -> marshal:
         args = self.reqparse.parse_args()
         for key, val in args.items():
             sensorConfig[key] = val
 
-        sensorApp.updateConfigSensor(sensorConfig)
-
+        SensorApplication.getInstance().updateConfigSensor(sensorConfig)
         return marshal(sensorConfig, sensorConfigFields)
-            
 
-class SensorApplication:
-    def __init__(self, sensorConfig: sensorConfigType):
-        self.__connector: SimpleRMQTopicConnection = SimpleRMQTopicConnection(RMQConfig(
-            "rabbitmq3",
-            5672,
-            "measurment",
-            "measurement.sensors.sensor1",
-            MessageType.JSON,
-        )) 
 
+class SensorMeta(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            instance = super().__call__(*args, **kwargs)
+            cls._instances[cls] = instance
+        return cls._instances[cls]
+
+
+class SensorApplication(metaclass=SensorMeta):
+    def __init__(self, sensorConfig: sensorConfigType, rabbitMQConfig: str):
+        self.__rabbitMQConfig: str = rabbitMQConfig
+        self.__connector: SimpleRMQTopicConnection = SimpleRMQTopicConnection(self.__getConfigRabbitMq())
         self.__sensorConfig:  sensorConfigType = sensorConfig
         self.__sensor: Sensor = Sensor(SensorApplication.signalTypeConfig(self.__sensorConfig['sensorType']), self.__sensorConfig['cycle']).\
                                     noise(NoiseConfig(self.__sensorConfig['noiseMean'], self.__sensorConfig['noiseStd'])).\
                                     wave(WaveConfig(self.__sensorConfig['waveMagnitude'], self.__sensorConfig['wavePoint'])).\
-                                    callTo(lambda x: print(x)).\
+                                    callTo(lambda x: self.__connector.send(x)).\
                                     initialize()
         self.__sensorIsStart: bool = False
         self.flaskApp: Flask = Flask(__name__, static_url_path="")
         self.flaskApi: Api = Api(self.flaskApp)
         self.serverManager: Manager = Manager(self.flaskApp)
 
+    def __getConfigRabbitMq(self) -> RMQConfig:
+        config = {}
+        with open(self.__rabbitMQConfig, 'r') as stream:
+            obj: yaml.load = yaml.safe_load(stream)
+            config = obj["rabbitMQ"]
+
+        host = config["host"]
+        port = config["port"]
+        exchange = config["exchange"]
+        topic = config["topic"]
+        queues = config["queues"]
+        messageType = config["messageType"]
+
+        if messageType == 'json':
+            messageType = MessageType.JSON
+        elif messageType == 'text':
+            messageType = MessageType.TEXT
+
+        return RMQConfig(host, port, exchange, topic, queues, messageType)
+
+    def __getSeverConfig(self) -> ServerConfig:
+        config = {}
+        with open(self.__rabbitMQConfig, 'r') as stream:
+            obj: yaml.load = yaml.safe_load(stream)
+            config = obj["serverapi"]
+
+        host = config["host"]
+        port = config["port"]
+
+        return ServerConfig(host, port)
+
     def run(self):
+        serverConfig: ServerConfig = self.__getSeverConfig()
         self.flaskApi.add_resource(SensorConfigAPI, '/api/v1/sensorconfig', endpoint='sensorconfig')
-        self.serverManager.add_command('runserver', CustomServer())
+        self.serverManager.add_command('runserver', CustomServer(host=serverConfig.host, port=serverConfig.port, use_debugger=True))
         self.serverManager.run()
 
     @property
@@ -149,8 +193,8 @@ class SensorApplication:
         self.startSensor()
 
     @classmethod
-    def app(cls) -> Any:
-        return cls(DEFAULT_SENSOR_CONFIG)
+    def getInstance(cls) -> Any:
+        return cls._instances[cls]
     
     @staticmethod
     def signalTypeConfig(typeStr: str) -> SignalType:
@@ -160,18 +204,3 @@ class SensorApplication:
             return SignalType.STATICWAVE
         elif typeStr == 'SquareWave':
             return SignalType.SQUAREWAVE
-
-sensorApp = SensorApplication.app()
-
-
-
-        
-        
-
-
-
-
-    
-
-
-    

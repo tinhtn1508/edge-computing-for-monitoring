@@ -14,7 +14,9 @@ services:
     restart: always
 
   sensor:
-    image: trhoangtuan96/edge-sensor:latest
+    image: duongtomho/sensor:latest
+    ports:
+      - "5000:5000"
     networks:
       - edge
     depends_on:
@@ -22,6 +24,7 @@ services:
     restart: always
     volumes:
       - ./../sensors:/sensors
+      - ./../configs:/configs
 
   processor:
     image: trhoangtuan96/edge-processor:latest

@@ -1,0 +1,11 @@
+rabbitMQ:
+    host: "rabbitmq3"
+    port: 5672
+    exchange: "measurment"
+    topic: "measurement.sensors.sensor1"
+    queues: 
+        - "measurement.sensors.sensor1"
+    messageType: json
+serverapi:
+    host: "0.0.0.0"
+    port: 5000

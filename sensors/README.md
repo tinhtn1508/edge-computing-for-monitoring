@@ -15,7 +15,7 @@ curl --location --request PUT 'http://127.0.0.1:5000/api/v1/sensorconfig' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "sensorType": "SquareWave",
-    "cycle": 10.0
+    "cycle": 10.0,
     "noiseMean": 0.0,
     "noiseStd": 0.3,
     "waveMagnitude": 5.0,
