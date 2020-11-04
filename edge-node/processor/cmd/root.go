@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/config"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/core"
+	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/influxdb"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/kafka"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/rmq"
 	"go.uber.org/zap"
@@ -70,6 +71,46 @@ var rootCmd = &cobra.Command{
 		processor.Start()
 		defer processor.Stop()
 		time.Sleep(60 * time.Second)
+
+		influxdbClient := influxdb.NewHTTPInfluxDBConnector(influxdb.HTTPInfluxDBConnectorDeps{
+			Log:     log,
+			Ctx:     globalContext,
+			Timeout: 500 * time.Millisecond,
+			Host:    config.GetConfig().InfluxDBConfig.Host,
+			Port:    config.GetConfig().InfluxDBConfig.Port,
+		})
+
+		if err := influxdbClient.Open(); err != nil {
+			log.Fatalf("error while opening influxdb connection: %s", err)
+		}
+
+		if err := influxdbClient.CreateNewDB("mytest"); err != nil {
+			log.Fatalf("error while creating new influxdb, %s", err)
+		}
+
+		influxdbWriter := influxdb.NewSimpleWriter(influxdb.WriterConfig{
+			Log:       log,
+			Ctx:       globalContext,
+			Batchsize: config.GetConfig().InfluxDBConfig.BatchSize,
+			Duration:  config.GetConfig().InfluxDBConfig.BatchTime,
+			DBName:    "mytest",
+		})
+
+		influxdbWriter.Init(influxdbClient.GetClient())
+
+		// DEBUG: Write some value to influxdb
+		// for i := 0; i < 10; i++ {
+		// 	info := influxdb.WriterInfo{
+		// 		Measurement: "sensor",
+		// 		Tags:        map[string]string{"name": "temperature"},
+		// 		Time:        time.Now(),
+		// 		Value:       float64(i),
+		// 	}
+		// 	influxdbWriter.Write(info)
+		// 	time.Sleep(1 * time.Second)
+		// }
+
+		time.Sleep(10 * time.Second)
 	},
 }
 

@@ -16,3 +16,9 @@ rabbitmq:
 core:
     record-lifetime: 1500ms
     collect-interval: 1s
+influxdb:
+    host: "127.0.0.1"
+    port: 8086
+    write-timeout: 500ms
+    batch-size: 20
+    batch-time: 5s

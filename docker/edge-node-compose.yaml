@@ -34,23 +34,25 @@ services:
     volumes:
       - ./../edge-node/processor:/app
 
-  # influxdb:
-  #   image: "influxdb"
-  #   ports:
-  #     - "8086:8086"
-  #   volumes:
-  #     - "../configs/influxdb.conf:/etc/influxdb/influxdb.conf"
-  #   networks:
-  #     - edge
+  influxdb:
+    image: "influxdb"
+    ports:
+      - "8086:8086"
+    # volumes:
+    #   - "../configsinfluxdb/.conf:/etc/influxdb/influxdb.conf"
+    networks:
+      - edge
+    restart: always
 
-  # grafana:
-  #   image: "grafana/grafana"
-  #   ports:
-  #     - "3000:3000"
-  #   links:
-  #     - influxdb:influxdb
-  #   networks:
-  #     - edge
+  grafana:
+    image: "grafana/grafana"
+    ports:
+      - "3000:3000"
+    links:
+      - influxdb:influxdb
+    networks:
+      - edge
+    restart: always
 
 networks:
   edge:

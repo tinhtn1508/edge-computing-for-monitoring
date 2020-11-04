@@ -6,15 +6,17 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/core"
+	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/influxdb"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/kafka"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/rmq"
 )
 
 // Config holds all the configurations of the tool
 type Config struct {
-	KafkaConfig kafka.KafkaConfig  `mapstructure:"kafka"`
-	RMQConfig   rmq.RabbitMQConfig `mapstructure:"rabbitmq"`
-	CoreConfig  core.CoreConfig    `mapstructure:"core"`
+	KafkaConfig    kafka.KafkaConfig  `mapstructure:"kafka"`
+	RMQConfig      rmq.RabbitMQConfig `mapstructure:"rabbitmq"`
+	CoreConfig     core.CoreConfig    `mapstructure:"core"`
+	InfluxDBConfig influxdb.Config    `mapstructure:"influxdb"`
 }
 
 // GetKafkaHost produces kafka hostname
