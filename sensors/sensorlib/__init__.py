@@ -22,7 +22,7 @@ from .rabbitmq_connector import (
     SimpleRMQTopicConnection,
 )
 
-from .sensor_app import (
+from .app import (
     SensorApplication,
 )
 
