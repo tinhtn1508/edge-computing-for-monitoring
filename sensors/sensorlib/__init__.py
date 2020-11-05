@@ -24,5 +24,9 @@ from .rabbitmq_connector import (
 
 from .sensor_app import (
     SensorApplication,
-    DEFAULT_SENSOR_CONFIG,
+)
+
+from .app_config import (
+    GetAppConfig,
+    AppConfig,
 )

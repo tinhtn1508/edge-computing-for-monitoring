@@ -24,7 +24,13 @@ services:
     restart: always
     volumes:
       - ./../sensors:/sensors
-      - ./../configs:/configs
+      - ./../configs:/sensors/configs
+    environment:
+      EDGE_CONF_FILE: "./configs/edge-sensor.yaml"
+      RMQ_TOPIC: "measurement.sensors.sensor1"
+      RMQ_QUEUES: "measurement.sensors.sensor1"
+      RMQ_MESSGAE_TYPE: "json"
+      SERVER_API_PORT: 5000
 
   processor:
     image: trhoangtuan96/edge-processor:latest

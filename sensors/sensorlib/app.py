@@ -1,3 +1,4 @@
+import datetime
 import yaml
 from dataclasses import dataclass
 from typing import Any
@@ -10,58 +11,40 @@ from .sensor_simualtor import (
     Sensor,
 )
 from .rabbitmq_connector import (
-    MessageType,
-    RMQConfig,
     SimpleRMQTopicConnection,
 )
-from flask import (
-    Flask,
-    abort,
+from .app_config import (
+    AppConfig,
 )
-from flask_script import Manager, Server
-from flask_restful import Api, Resource, reqparse, fields, marshal
-
-sensorConfigType = {
-    'sensorType': str,
-    'cycle': float,
-    'noiseMean': float,
-    'noiseStd': float,
-    'waveMagnitude': float,
-    'wavePoint': int
-}
-
-sensorConfigFields = {
-    'sensorType': fields.String,
-    'cycle': fields.Float,
-    'noiseMean': fields.Float,
-    'noiseStd': fields.Float,
-    'waveMagnitude': fields.Float,
-    'wavePoint': fields.Integer
-}
-
-DEFAULT_SENSOR_CONFIG: sensorConfigType = {
-    'sensorType': 'StaticWave',
-    'cycle': 10.0,
-    'noiseMean': 0.0,
-    'noiseStd': 0.3,
-    'waveMagnitude': 10.0,
-    'wavePoint': 20    
-}
-
-sensorConfig: sensorConfigType = DEFAULT_SENSOR_CONFIG
+from flask import Flask
+from flask_restful import (
+    Api, 
+    Resource, 
+    reqparse, 
+    fields, 
+    marshal
+)
 
 @dataclass
-class ServerConfig(object):
-    host: str
-    port: int
+class SensorData(object):
+    sensorConfigType = {
+        'sensorType': str,
+        'cycle': float,
+        'noiseMean': float,
+        'noiseStd': float,
+        'waveMagnitude': float,
+        'wavePoint': int
+    }
 
-
-class CustomServer(Server):
-    def __call__(self, app, *args, **kwargs):
-        SensorApplication.getInstance().startSensor()
-        SensorApplication.getInstance().sensorIsStart = True
-        return Server.__call__(self, app, *args, **kwargs)
-
+    sensorConfigFields = {
+        'sensorType': fields.String,
+        'cycle': fields.Float,
+        'noiseMean': fields.Float,
+        'noiseStd': fields.Float,
+        'waveMagnitude': fields.Float,
+        'wavePoint': fields.Integer
+    }
+    
 
 class SensorConfigAPI(Resource):
     """/api/v1/sensorconfig"""
@@ -76,15 +59,16 @@ class SensorConfigAPI(Resource):
         super(SensorConfigAPI, self).__init__()
 
     def get(self) -> marshal:
-        return marshal(SensorApplication.getInstance().sensorConfig, sensorConfigFields)
+        return marshal(SensorApplication.getInstance().sensorConfig, SensorData.sensorConfigFields)
 
     def put(self) -> marshal:
         args = self.reqparse.parse_args()
+        sensorConfig: SensorData.sensorConfigType = {}
         for key, val in args.items():
             sensorConfig[key] = val
 
         SensorApplication.getInstance().updateConfigSensor(sensorConfig)
-        return marshal(sensorConfig, sensorConfigFields)
+        return marshal(sensorConfig, SensorData.sensorConfigFields)
 
 
 class SensorMeta(type):
@@ -97,56 +81,30 @@ class SensorMeta(type):
 
 
 class SensorApplication(metaclass=SensorMeta):
-    def __init__(self, sensorConfig: sensorConfigType, rabbitMQConfig: str):
-        self.__rabbitMQConfig: str = rabbitMQConfig
-        self.__connector: SimpleRMQTopicConnection = SimpleRMQTopicConnection(self.__getConfigRabbitMq())
-        self.__sensorConfig:  sensorConfigType = sensorConfig
+    def __init__(self, appConfig: AppConfig):
+        self.__appConfig: AppConfig = appConfig
+        self.__connector: SimpleRMQTopicConnection = SimpleRMQTopicConnection(self.__appConfig.rabbitMQConfig)
+        self.__sensorConfig: SensorData.sensorConfigType = { 'sensorType': 'StaticWave',
+                                                            'cycle': 10.0,
+                                                            'noiseMean': 0.0,
+                                                            'noiseStd': 0.3,
+                                                            'waveMagnitude': 10.0,
+                                                            'wavePoint': 20    
+                                                            }
         self.__sensor: Sensor = Sensor(SensorApplication.signalTypeConfig(self.__sensorConfig['sensorType']), self.__sensorConfig['cycle']).\
                                     noise(NoiseConfig(self.__sensorConfig['noiseMean'], self.__sensorConfig['noiseStd'])).\
                                     wave(WaveConfig(self.__sensorConfig['waveMagnitude'], self.__sensorConfig['wavePoint'])).\
-                                    callTo(lambda x: self.__connector.send(x)).\
+                                    callTo(lambda x: self.__connector.send("{}: {}".format(datetime.datetime.now(), x))).\
                                     initialize()
         self.__sensorIsStart: bool = False
         self.flaskApp: Flask = Flask(__name__, static_url_path="")
         self.flaskApi: Api = Api(self.flaskApp)
-        self.serverManager: Manager = Manager(self.flaskApp)
-
-    def __getConfigRabbitMq(self) -> RMQConfig:
-        config = {}
-        with open(self.__rabbitMQConfig, 'r') as stream:
-            obj: yaml.load = yaml.safe_load(stream)
-            config = obj["rabbitMQ"]
-
-        host = config["host"]
-        port = config["port"]
-        exchange = config["exchange"]
-        topic = config["topic"]
-        queues = config["queues"]
-        messageType = config["messageType"]
-
-        if messageType == 'json':
-            messageType = MessageType.JSON
-        elif messageType == 'text':
-            messageType = MessageType.TEXT
-
-        return RMQConfig(host, port, exchange, topic, queues, messageType)
-
-    def __getSeverConfig(self) -> ServerConfig:
-        config = {}
-        with open(self.__rabbitMQConfig, 'r') as stream:
-            obj: yaml.load = yaml.safe_load(stream)
-            config = obj["serverapi"]
-
-        host = config["host"]
-        port = config["port"]
-
-        return ServerConfig(host, port)
 
     def run(self):
-        serverConfig: ServerConfig = self.__getSeverConfig()
         self.flaskApi.add_resource(SensorConfigAPI, '/api/v1/sensorconfig', endpoint='sensorconfig')
-        self.serverManager.add_command('runserver', CustomServer(host=serverConfig.host, port=serverConfig.port, use_debugger=True))
-        self.serverManager.run()
+        SensorApplication.getInstance().startSensor()
+        self.flaskApp.run(host=self.__appConfig.apiServerConfig.host, port=self.__appConfig.apiServerConfig.port)
+
 
     @property
     def sensor(self) -> Sensor:
@@ -157,7 +115,7 @@ class SensorApplication(metaclass=SensorMeta):
         self.__sensor = sensor
 
     @property
-    def sensorConfig(self) -> sensorConfig:
+    def sensorConfig(self) -> SensorData.sensorConfigType:
         return self.__sensorConfig
 
     @sensorConfig.setter
@@ -180,7 +138,7 @@ class SensorApplication(metaclass=SensorMeta):
         self.sensor.stop()
         self.sensorIsStart = False
 
-    def updateConfigSensor(self, config: sensorConfigType) -> None:
+    def updateConfigSensor(self, config: SensorData.sensorConfigType) -> None:
         if self.sensorIsStart:
             self.stopSensor()
 
@@ -188,7 +146,7 @@ class SensorApplication(metaclass=SensorMeta):
         self.sensor = Sensor(SensorApplication.signalTypeConfig(self.__sensorConfig['sensorType']), self.__sensorConfig['cycle']).\
                                     noise(NoiseConfig(self.__sensorConfig['noiseMean'], self.__sensorConfig['noiseStd'])).\
                                     wave(WaveConfig(self.__sensorConfig['waveMagnitude'], self.__sensorConfig['wavePoint'])).\
-                                    callTo(lambda x: self.__connector.send(x)).\
+                                    callTo(lambda x: self.__connector.send("{}: {}".format(datetime.datetime.now(), x))).\
                                     initialize()
         self.startSensor()
 

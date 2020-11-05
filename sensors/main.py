@@ -1,8 +1,9 @@
 import sensorlib
 import time
 
-def main():
-    app = sensorlib.SensorApplication(sensorlib.DEFAULT_SENSOR_CONFIG, './../configs/edge-sensor.yaml')
+def main() -> None:
+    appConfig: AppConfig = sensorlib.GetAppConfig().getSensorConfig()
+    app = sensorlib.SensorApplication(appConfig)
     app.run()
 
 if __name__ == "__main__":
