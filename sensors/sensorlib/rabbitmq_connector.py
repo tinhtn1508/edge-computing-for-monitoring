@@ -43,6 +43,7 @@ class SimpleRMQTopicConnection(object):
 
     def send(self, message: Any):
         messStr = ""
+
         if self._messageType == MessageType.JSON:
             messStr = self.__getJsonString(message)
         elif self._messageType == MessageType.TEXT:

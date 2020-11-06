@@ -99,16 +99,16 @@ var rootCmd = &cobra.Command{
 		influxdbWriter.Init(influxdbClient.GetClient())
 
 		// DEBUG: Write some value to influxdb
-		// for i := 0; i < 10; i++ {
-		// 	info := influxdb.WriterInfo{
-		// 		Measurement: "sensor",
-		// 		Tags:        map[string]string{"name": "temperature"},
-		// 		Time:        time.Now(),
-		// 		Value:       float64(i),
-		// 	}
-		// 	influxdbWriter.Write(info)
-		// 	time.Sleep(1 * time.Second)
-		// }
+		for i := 0; i < 10; i++ {
+			info := influxdb.WriterInfo{
+				Measurement: "sensor",
+				Tags:        map[string]string{"name": "temperature"},
+				Time:        time.Now(),
+				Value:       float64(i),
+			}
+			influxdbWriter.Write(info)
+			time.Sleep(1 * time.Second)
+		}
 
 		time.Sleep(10 * time.Second)
 	},

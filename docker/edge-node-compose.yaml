@@ -1,4 +1,4 @@
-version: "3.3"
+version: "3.8"
 services:
   rabbitmq3:
     image: rabbitmq:3-management-alpine
@@ -31,6 +31,14 @@ services:
       RMQ_QUEUES: "measurement.sensors.sensor1"
       RMQ_MESSGAE_TYPE: "json"
       SERVER_API_PORT: 5000
+    deploy:
+      restart_policy:
+        condition: any
+        delay: 9s
+        window: 60s
+    command: >
+      sh -c "sleep 7 &&
+              python main.py"
 
   processor:
     image: trhoangtuan96/edge-processor:latest

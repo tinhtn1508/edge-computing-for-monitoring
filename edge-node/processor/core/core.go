@@ -3,7 +3,6 @@ package core
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"sync"
 	"time"
 
@@ -18,6 +17,11 @@ type Record struct {
 	AppID     string
 	Timestamp time.Time
 	Body      []byte
+}
+
+type SensorSignal struct {
+	TimeStamp uint64  `json:"timeStamp"`
+	Value     float64 `json:"value"`
 }
 
 type CoreConfig struct {
@@ -70,14 +74,15 @@ func (p *CoreProcessor) collect() {
 	p.RLock()
 	defer p.RUnlock()
 	p.log.Infof("dang collect ne")
-	aggregated := make(map[string]float64)
+	aggregated := make(map[string]*SensorSignal)
 	for k, v := range p.recordTable {
 		if v.Timestamp.Add(p.recordLifetime).Unix() < time.Now().Unix() {
 			p.log.Errorf("Cai record nay (%s) --- %+v --- expire nha", k, v)
 		} else {
 			p.log.Infof("Cai record nay (%s) valid ne: %+v", k, v)
-			if f, err := strconv.ParseFloat(string(v.Body), 64); err == nil {
-				aggregated[k] = f
+			signal := &SensorSignal{}
+			if err := json.Unmarshal(v.Body, signal); err == nil {
+				aggregated[k] = signal
 			} else {
 				p.log.Errorf("Malformed number: %s / Error: %s", v.Body, err)
 			}

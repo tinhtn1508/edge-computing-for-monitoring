@@ -44,7 +44,6 @@ class SensorData(object):
         'waveMagnitude': fields.Float,
         'wavePoint': fields.Integer
     }
-    
 
 class SensorConfigAPI(Resource):
     """/api/v1/sensorconfig"""
@@ -89,12 +88,13 @@ class SensorApplication(metaclass=SensorMeta):
                                                             'noiseMean': 0.0,
                                                             'noiseStd': 0.3,
                                                             'waveMagnitude': 10.0,
-                                                            'wavePoint': 20    
+                                                            'wavePoint': 20
                                                             }
         self.__sensor: Sensor = Sensor(SensorApplication.signalTypeConfig(self.__sensorConfig['sensorType']), self.__sensorConfig['cycle']).\
                                     noise(NoiseConfig(self.__sensorConfig['noiseMean'], self.__sensorConfig['noiseStd'])).\
                                     wave(WaveConfig(self.__sensorConfig['waveMagnitude'], self.__sensorConfig['wavePoint'])).\
-                                    callTo(lambda x: self.__connector.send("{}: {}".format(datetime.datetime.now(), x))).\
+                                    callTo(lambda x: self.__connector.send({"timeStamp": int(datetime.datetime.now().timestamp()),\
+                                                                            "value": x})).\
                                     initialize()
         self.__sensorIsStart: bool = False
         self.flaskApp: Flask = Flask(__name__, static_url_path="")
@@ -146,7 +146,8 @@ class SensorApplication(metaclass=SensorMeta):
         self.sensor = Sensor(SensorApplication.signalTypeConfig(self.__sensorConfig['sensorType']), self.__sensorConfig['cycle']).\
                                     noise(NoiseConfig(self.__sensorConfig['noiseMean'], self.__sensorConfig['noiseStd'])).\
                                     wave(WaveConfig(self.__sensorConfig['waveMagnitude'], self.__sensorConfig['wavePoint'])).\
-                                    callTo(lambda x: self.__connector.send("{}: {}".format(datetime.datetime.now(), x))).\
+                                    callTo(lambda x: self.__connector.send({"timeStamp": int(datetime.datetime.now().timestamp()),\
+                                                                            "value": x})).\
                                     initialize()
         self.startSensor()
 
