@@ -1,0 +1,11 @@
+rabbitMQ:
+    host: "rabbitmq3"
+    port: 5672
+    exchange: "measurment"
+    topic: ${RMQ_TOPIC}
+    queues: 
+        - ${RMQ_QUEUES}
+    messageType: ${RMQ_MESSGAE_TYPE}
+serverAPI:
+    host: "0.0.0.0"
+    port: ${SERVER_API_PORT}

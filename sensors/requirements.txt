@@ -1,3 +1,7 @@
+pyyaml
+envyaml
 loguru
 pika
 numpy
+flask
+flask_restful
