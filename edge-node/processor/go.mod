@@ -11,5 +11,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.1
 	github.com/streadway/amqp v1.0.0
+	github.com/tinhtn1508/edge-computing-for-monitor/go-lib v0.0.0-20201108100522-e9f5becce13d
 	go.uber.org/zap v1.16.0
 )
