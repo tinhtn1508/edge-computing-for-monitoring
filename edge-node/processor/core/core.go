@@ -7,11 +7,12 @@ import (
 	"sync"
 	"time"
 
+	influxdb "github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
 
-	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/influxdb"
-	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/rmq"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/types"
+	influxdblib "github.com/tinhtn1508/edge-computing-for-monitor/go-lib/influxdb"
+	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/rmq"
 )
 
 type PublishFunc func([]byte, []byte) error
@@ -31,7 +32,7 @@ type CoreProcessorConfig struct {
 	Log             *zap.SugaredLogger
 	CoreConfig      CoreConfig
 	PublishCallback PublishFunc
-	InfluxDBWriter  influxdb.IWriter
+	InfluxDBWriter  influxdblib.IWriter
 	InfoKey         string
 }
 
@@ -52,7 +53,7 @@ type CoreProcessor struct {
 	handlerTable    map[string]rmq.DataConsumeFunc
 	recordTable     map[string]Record
 	publishFunc     PublishFunc
-	writer          influxdb.IWriter
+	writer          influxdblib.IWriter
 	infoKey         string
 }
 
@@ -139,13 +140,26 @@ func (p *CoreProcessor) AddConsumingTask(key string) (rmq.DataConsumeFunc, error
 			appid, t, body,
 		}
 
+		data := &types.SensorSignal{}
+		if err := json.Unmarshal(body, data); err != nil {
+			return fmt.Errorf("Malformed number: %s / Error: %s", body, err)
+		}
+
 		measurement, tags := p._parseInfluxInfo(key)
+
 		if measurement != "" && tags != nil {
-			p.writer.Write(influxdb.WriterInfo{
-				Measurement: measurement,
-				Tags:        tags,
-				Data:        body,
-			})
+			if point, err := influxdb.NewPoint(
+				measurement,
+				tags,
+				map[string]interface{}{
+					"value": data.Value,
+				},
+				time.Unix(0, int64(data.TimeStamp)),
+			); err != nil {
+				return fmt.Errorf("Error while create a new point, %w", err)
+			} else {
+				p.writer.Write(point)
+			}
 		}
 		return nil
 	}

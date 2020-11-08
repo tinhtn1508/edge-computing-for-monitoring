@@ -11,9 +11,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/config"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/core"
-	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/influxdb"
-	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/kafka"
-	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/rmq"
+	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/influxdb"
+	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/kafka"
+	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/rmq"
 	"go.uber.org/zap"
 )
 
