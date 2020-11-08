@@ -93,7 +93,7 @@ class SensorApplication(metaclass=SensorMeta):
         self.__sensor: Sensor = Sensor(SensorApplication.signalTypeConfig(self.__sensorConfig['sensorType']), self.__sensorConfig['cycle']).\
                                     noise(NoiseConfig(self.__sensorConfig['noiseMean'], self.__sensorConfig['noiseStd'])).\
                                     wave(WaveConfig(self.__sensorConfig['waveMagnitude'], self.__sensorConfig['wavePoint'])).\
-                                    callTo(lambda x: self.__connector.send({"timeStamp": int(datetime.datetime.now().timestamp()),\
+                                    callTo(lambda x: self.__connector.send({"timeStamp": int(datetime.datetime.now().timestamp()*10**9),\
                                                                             "value": x})).\
                                     initialize()
         self.__sensorIsStart: bool = False
@@ -146,7 +146,7 @@ class SensorApplication(metaclass=SensorMeta):
         self.sensor = Sensor(SensorApplication.signalTypeConfig(self.__sensorConfig['sensorType']), self.__sensorConfig['cycle']).\
                                     noise(NoiseConfig(self.__sensorConfig['noiseMean'], self.__sensorConfig['noiseStd'])).\
                                     wave(WaveConfig(self.__sensorConfig['waveMagnitude'], self.__sensorConfig['wavePoint'])).\
-                                    callTo(lambda x: self.__connector.send({"timeStamp": int(datetime.datetime.now().timestamp()),\
+                                    callTo(lambda x: self.__connector.send({"timeStamp": int(datetime.datetime.now().timestamp()*10**9),\
                                                                             "value": x})).\
                                     initialize()
         self.startSensor()
