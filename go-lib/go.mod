@@ -4,5 +4,6 @@ go 1.14
 
 require (
 	github.com/influxdata/influxdb v1.8.3
+	github.com/segmentio/kafka-go v0.2.0
 	go.uber.org/zap v1.16.0
 )

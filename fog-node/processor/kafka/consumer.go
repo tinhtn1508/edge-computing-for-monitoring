@@ -28,8 +28,8 @@ type GeneralConsumerDeps struct {
 	Brokers       []string
 	Partition     int
 	Offset        int64
-	SleepInterval time.Duration
-	ReadTimeout   time.Duration
+	SleepInterval int
+	ReadTimeout   int
 	Consume       ConsumingFunction
 }
 
@@ -57,8 +57,8 @@ func NewGeneralConsumer(deps GeneralConsumerDeps) *GeneralConsumer {
 		brokers:       deps.Brokers,
 		partition:     deps.Partition,
 		offset:        deps.Offset,
-		sleepInterval: deps.SleepInterval,
-		readTimeout:   deps.ReadTimeout,
+		sleepInterval: time.Duration(deps.SleepInterval),
+		readTimeout:   time.Duration(deps.ReadTimeout),
 		consume:       deps.Consume,
 	}
 }
