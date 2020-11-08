@@ -67,11 +67,11 @@ services:
       sh -c "sleep 10 &&
               python main.py"
 
-  processor:
+  edge-processor:
     image: trhoangtuan96/edge-processor:latest
     networks:
       - edge
-      - docker_fog
+      - docker_broker
     depends_on:
       - rabbitmq3
     restart: always
@@ -101,5 +101,5 @@ services:
 networks:
   edge:
     driver: bridge
-  docker_fog:
+  docker_broker:
     external: true

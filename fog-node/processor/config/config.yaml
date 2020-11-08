@@ -3,6 +3,7 @@ kafka:
   port: 9092
   brokers:
     - "kafka:9092"
+  partitions: 1
   write-timeout: 500ms
   read-timeout: 500ms
   topic: measurement

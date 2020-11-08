@@ -5,16 +5,15 @@ import (
 	"log"
 
 	"github.com/spf13/viper"
-	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/influxdb"
-	"github.com/tinhtn1508/edge-computing-for-monitor/fog-node/processor/core"
-	"github.com/tinhtn1508/edge-computing-for-monitor/fog-node/processor/kafka"
+	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/influxdb"
+	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/kafka"
 )
 
 // Config holds all the configurations of the tool
 type Config struct {
-	KafkaConfig    kafka.KafkaConfig `mapstructure:"kafka"`
-	CoreConfig     core.CoreConfig   `mapstructure:"core"`
-	InfluxDBConfig influxdb.Config   `mapstructure:"influxdb"`
+	KafkaConfig kafka.KafkaConfig `mapstructure:"kafka"`
+	// CoreConfig     core.CoreConfig   `mapstructure:"core"`
+	InfluxDBConfig influxdb.Config `mapstructure:"influxdb"`
 }
 
 // GetKafkaHost produces kafka hostname

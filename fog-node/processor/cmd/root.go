@@ -6,9 +6,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/tinhtn1508/edge-computing-for-monitor/fog-node/processor/config"
+	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/kafka"
 	"go.uber.org/zap"
 )
 
@@ -19,6 +21,45 @@ var rootCmd = &cobra.Command{
 	Use: "",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Infof("hello")
+		kafkaClient := kafka.NewTcpKafkaConnector(kafka.TcpKafkaConnectorDeps{
+			Log:     log,
+			Ctx:     globalContext,
+			Timeout: 500 * time.Millisecond,
+			Host:    config.GetConfig().KafkaConfig.Host,
+		})
+		if err := kafkaClient.Open(); err != nil {
+			log.Fatalf("error while opening kafka connection: %s", err)
+		}
+		if err := kafkaClient.CreateTopics(config.GetConfig().KafkaConfig.Topic, 1, 1); err != nil {
+			log.Fatalf("error while creating kafka topic: %s", err)
+		}
+
+		kafkaConsumer := kafka.NewGeneralConsumer(kafka.GeneralConsumerDeps{
+			Log:           log,
+			Ctx:           globalContext,
+			Topic:         config.GetConfig().KafkaConfig.Topic,
+			Brokers:       config.GetConfig().KafkaConfig.Brokers,
+			Partition:     config.GetConfig().KafkaConfig.Partitions,
+			Offset:        -1,
+			SleepInterval: time.Duration(1),
+			ReadTimeout:   config.GetConfig().KafkaConfig.ReadTimeout,
+			Consume: func(key []byte, value []byte) bool {
+				log.Infof("receive: [k - v]: %+w --- %+w", key, value)
+				return true
+			},
+		})
+
+		if err := kafkaConsumer.Init(); err != nil {
+			log.Fatalf("error while initializing kafka consumer")
+		}
+
+		if err := kafkaConsumer.StartConsuming(); err != nil {
+			log.Fatalf("error while start consuming kafka messages")
+		}
+
+		for {
+			time.Sleep(1 * time.Second)
+		}
 	},
 }
 

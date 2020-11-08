@@ -80,7 +80,7 @@ func (c *GeneralConsumer) StartConsuming() error {
 	if c.reader == nil {
 		return fmt.Errorf("Kafka reader haven't been started, call Init() first")
 	}
-	ticker := time.NewTicker(c.sleepInterval * time.Second)
+	ticker := time.NewTicker(c.sleepInterval)
 	go func() {
 		for {
 			select {
@@ -88,9 +88,7 @@ func (c *GeneralConsumer) StartConsuming() error {
 				return
 			case <-ticker.C:
 				for {
-					timeoutCtx, cancel := context.WithTimeout(c.ctx,
-						c.readTimeout*time.Second,
-					)
+					timeoutCtx, cancel := context.WithTimeout(c.ctx, c.readTimeout)
 					defer cancel()
 					msg, err := c.reader.ReadMessage(timeoutCtx)
 					if err != nil {
