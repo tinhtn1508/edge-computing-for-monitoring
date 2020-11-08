@@ -7,7 +7,7 @@
 
 | Software | Minimum version |
 | -------- | --------------- |
-| Node.js  | 12.x            |
+| Node.js  | 14.x            |
 | npm      | 6.x             |
 
 ## Databases
@@ -66,4 +66,14 @@ $ docker inspect dev-postgres -f "{{json .NetworkSettings.Networks }}"
 
 ```
 "IPAddress of server PostgreSQL":"172.17.0.2"
+```
+
+#### Backup Database using pg_dump
+```
+docker exec -t dev-postgres pg_dumpall -c -U catalog > dump_$(date +%Y-%m-%d_%H_%M_%S).sql
+```
+
+#### Restore Database using psql
+```
+docker exec -i dev-postgres psql --username catalog --password catalog catalog < dump_2020-11-08_14_18_46.sql
 ```

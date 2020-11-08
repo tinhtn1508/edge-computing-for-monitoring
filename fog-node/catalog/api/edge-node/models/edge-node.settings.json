@@ -1,0 +1,29 @@
+{
+  "kind": "collectionType",
+  "collectionName": "edge_node",
+  "info": {
+    "name": "edge_node",
+    "description": ""
+  },
+  "options": {
+    "increments": true,
+    "timestamps": true,
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "factory": {
+      "model": "factory",
+      "via": "edge_nodes"
+    },
+    "sensors": {
+      "collection": "sensor",
+      "via": "edge_node"
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "sensor",
+  "info": {
+    "name": "sensor",
+    "description": ""
+  },
+  "options": {
+    "increments": true,
+    "timestamps": true,
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "edge_node": {
+      "via": "sensors",
+      "model": "edge-node"
+    },
+    "sensor_type": {
+      "model": "sensor-type",
+      "via": "sensors"
+    },
+    "rule": {
+      "via": "sensor",
+      "model": "rule"
+    }
+  }
+}

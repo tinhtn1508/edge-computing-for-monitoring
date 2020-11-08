@@ -1,0 +1,30 @@
+{
+  "kind": "collectionType",
+  "collectionName": "factory",
+  "info": {
+    "name": "factory",
+    "description": ""
+  },
+  "options": {
+    "increments": true,
+    "timestamps": true,
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "edge_nodes": {
+      "via": "factory",
+      "collection": "edge-node"
+    },
+    "users_permissions_users": {
+      "plugin": "users-permissions",
+      "collection": "user",
+      "via": "factory"
+    }
+  }
+}

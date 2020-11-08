@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "sensor_type",
+  "info": {
+    "name": "sensor_type"
+  },
+  "options": {
+    "increments": true,
+    "timestamps": true,
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "sensors": {
+      "via": "sensor_type",
+      "collection": "sensor"
+    }
+  }
+}

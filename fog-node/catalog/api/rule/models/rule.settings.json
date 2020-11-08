@@ -1,0 +1,29 @@
+{
+  "kind": "collectionType",
+  "collectionName": "rule",
+  "info": {
+    "name": "rule",
+    "description": ""
+  },
+  "options": {
+    "increments": true,
+    "timestamps": true,
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "condition": {
+      "type": "json"
+    },
+    "sensor": {
+      "model": "sensor",
+      "via": "rule"
+    },
+    "transactions": {
+      "collection": "transaction",
+      "via": "rule"
+    }
+  }
+}
