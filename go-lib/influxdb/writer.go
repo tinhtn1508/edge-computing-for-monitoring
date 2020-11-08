@@ -12,7 +12,7 @@ import (
 // IWriter is used to public writer's methods
 type IWriter interface {
 	Init(client influxdb.Client) error
-	Write(info WriterInfo) error
+	Write(info *influxdb.Point) error
 }
 
 // WriterConfig is used to present for configure params
