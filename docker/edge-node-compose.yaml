@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3.3"
 services:
   rabbitmq3:
     image: rabbitmq:3-management-alpine
@@ -13,7 +13,7 @@ services:
       - edge
     restart: always
 
-  sensor:
+  sensor1:
     image: duongtomho/sensor:latest
     ports:
       - "5000:5000"
@@ -37,7 +37,34 @@ services:
         delay: 9s
         window: 60s
     command: >
-      sh -c "sleep 7 &&
+      sh -c "sleep 10 &&
+              python main.py"
+
+  sensor2:
+    image: duongtomho/sensor:latest
+    ports:
+      - "5001:5000"
+    networks:
+      - edge
+    depends_on:
+      - rabbitmq3
+    restart: always
+    volumes:
+      - ./../sensors:/sensors
+      - ./../configs:/sensors/configs
+    environment:
+      EDGE_CONF_FILE: "./configs/edge-sensor.yaml"
+      RMQ_TOPIC: "measurement.sensors.sensor2"
+      RMQ_QUEUES: "measurement.sensors.sensor2"
+      RMQ_MESSGAE_TYPE: "json"
+      SERVER_API_PORT: 5000
+    deploy:
+      restart_policy:
+        condition: any
+        delay: 9s
+        window: 60s
+    command: >
+      sh -c "sleep 10 &&
               python main.py"
 
   processor:

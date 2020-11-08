@@ -2,10 +2,12 @@ package influxdb
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	influxdb "github.com/influxdata/influxdb/client/v2"
+	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/types"
 	"go.uber.org/zap"
 )
 
@@ -25,12 +27,16 @@ type WriterConfig struct {
 	DBName    string
 }
 
+type WriteData struct {
+}
+
 // WriterInfo is used to write information
 type WriterInfo struct {
 	Measurement string
 	Tags        map[string]string
-	Time        time.Time
-	Value       float64
+	// Time        time.Time
+	// Value       float64
+	Data []byte
 }
 
 type simpleWriter struct {
@@ -117,7 +123,15 @@ func (iw *simpleWriter) Write(info WriterInfo) error {
 		return fmt.Errorf("The writer have not been initialized yet")
 	}
 
-	if p, err := influxdb.NewPoint(info.Measurement, info.Tags, map[string]interface{}{"value": info.Value}, info.Time); err != nil {
+	data := &types.SensorSignal{}
+	if err := json.Unmarshal(info.Data, data); err != nil {
+		return fmt.Errorf("Malformed number: %s / Error: %s", info.Data, err)
+	}
+
+	if p, err := influxdb.NewPoint(info.Measurement,
+		info.Tags, map[string]interface{}{
+			"value": data.Value},
+		time.Unix(0, int64(data.TimeStamp))); err != nil {
 		return fmt.Errorf("Error while create a new point, %w", err)
 	} else {
 		iw.point <- p

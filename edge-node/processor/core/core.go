@@ -3,12 +3,15 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
 	"go.uber.org/zap"
 
+	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/influxdb"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/rmq"
+	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/types"
 )
 
 type PublishFunc func([]byte, []byte) error
@@ -17,11 +20,6 @@ type Record struct {
 	AppID     string
 	Timestamp time.Time
 	Body      []byte
-}
-
-type SensorSignal struct {
-	TimeStamp uint64  `json:"timeStamp"`
-	Value     float64 `json:"value"`
 }
 
 type CoreConfig struct {
@@ -33,6 +31,7 @@ type CoreProcessorConfig struct {
 	Log             *zap.SugaredLogger
 	CoreConfig      CoreConfig
 	PublishCallback PublishFunc
+	InfluxDBWriter  influxdb.IWriter
 	InfoKey         string
 }
 
@@ -53,6 +52,7 @@ type CoreProcessor struct {
 	handlerTable    map[string]rmq.DataConsumeFunc
 	recordTable     map[string]Record
 	publishFunc     PublishFunc
+	writer          influxdb.IWriter
 	infoKey         string
 }
 
@@ -67,6 +67,7 @@ func NewCoreProcessor(cfg CoreProcessorConfig) ICoreProcessor {
 		recordTable:     make(map[string]Record),
 		publishFunc:     cfg.PublishCallback,
 		infoKey:         cfg.InfoKey,
+		writer:          cfg.InfluxDBWriter,
 	}
 }
 
@@ -74,13 +75,13 @@ func (p *CoreProcessor) collect() {
 	p.RLock()
 	defer p.RUnlock()
 	p.log.Infof("dang collect ne")
-	aggregated := make(map[string]*SensorSignal)
+	aggregated := make(map[string]*types.SensorSignal)
 	for k, v := range p.recordTable {
 		if v.Timestamp.Add(p.recordLifetime).Unix() < time.Now().Unix() {
 			p.log.Errorf("Cai record nay (%s) --- %+v --- expire nha", k, v)
 		} else {
 			p.log.Infof("Cai record nay (%s) valid ne: %+v", k, v)
-			signal := &SensorSignal{}
+			signal := &types.SensorSignal{}
 			if err := json.Unmarshal(v.Body, signal); err == nil {
 				aggregated[k] = signal
 			} else {
@@ -94,6 +95,15 @@ func (p *CoreProcessor) collect() {
 		p.publishFunc([]byte(fmt.Sprintf("%s-%d", p.infoKey, time.Now().Unix())), bjson)
 	}
 	p.log.Infof("can phai aggregate info ne")
+}
+
+func (p *CoreProcessor) _parseInfluxInfo(key string) (string, map[string]string) {
+	params := strings.Split(key, ".")
+	if len(params) != 3 {
+		p.log.Errorf("Incorret key format, %s", key)
+		return "", nil
+	}
+	return params[0], map[string]string{params[1]: params[2]}
 }
 
 func (p *CoreProcessor) Start() {
@@ -127,6 +137,15 @@ func (p *CoreProcessor) AddConsumingTask(key string) (rmq.DataConsumeFunc, error
 		defer p.Unlock()
 		p.recordTable[key] = Record{
 			appid, t, body,
+		}
+
+		measurement, tags := p._parseInfluxInfo(key)
+		if measurement != "" && tags != nil {
+			p.writer.Write(influxdb.WriterInfo{
+				Measurement: measurement,
+				Tags:        tags,
+				Data:        body,
+			})
 		}
 		return nil
 	}

@@ -47,30 +47,6 @@ var rootCmd = &cobra.Command{
 		if err := kafkaWritter.Start(); err != nil {
 			log.Fatalf("Cannot initialize kafka writter, error: %s", err)
 		}
-		processor := core.NewCoreProcessor(core.CoreProcessorConfig{
-			log,
-			config.GetConfig().CoreConfig,
-			kafkaWritter.Produce,
-			"measurement",
-		})
-		for _, q := range config.GetConfig().RMQConfig.Queues {
-			processor.AddConsumingTask(q)
-		}
-		consumer, err := rmq.NewTopicConsumer(rmq.RabbitMQConsumerConfig{
-			Log:              log,
-			ServerURL:        config.GetConfig().RMQConfig.GetUrl(),
-			Exchange:         config.GetConfig().RMQConfig.Exchange,
-			QueuesProcessors: processor.GetHandlerMap(),
-		})
-
-		if err != nil {
-			log.Fatalf("Error while creating consumer: %s", err)
-		}
-		consumer.Start()
-		defer consumer.Stop()
-		processor.Start()
-		defer processor.Stop()
-		time.Sleep(60 * time.Second)
 
 		influxdbClient := influxdb.NewHTTPInfluxDBConnector(influxdb.HTTPInfluxDBConnectorDeps{
 			Log:     log,
@@ -95,22 +71,33 @@ var rootCmd = &cobra.Command{
 			Duration:  config.GetConfig().InfluxDBConfig.BatchTime,
 			DBName:    "mytest",
 		})
-
 		influxdbWriter.Init(influxdbClient.GetClient())
 
-		// DEBUG: Write some value to influxdb
-		for i := 0; i < 10; i++ {
-			info := influxdb.WriterInfo{
-				Measurement: "sensor",
-				Tags:        map[string]string{"name": "temperature"},
-				Time:        time.Now(),
-				Value:       float64(i),
-			}
-			influxdbWriter.Write(info)
-			time.Sleep(1 * time.Second)
+		processor := core.NewCoreProcessor(core.CoreProcessorConfig{
+			log,
+			config.GetConfig().CoreConfig,
+			kafkaWritter.Produce,
+			influxdbWriter,
+			"measurement",
+		})
+		for _, q := range config.GetConfig().RMQConfig.Queues {
+			processor.AddConsumingTask(q)
 		}
+		consumer, err := rmq.NewTopicConsumer(rmq.RabbitMQConsumerConfig{
+			Log:              log,
+			ServerURL:        config.GetConfig().RMQConfig.GetUrl(),
+			Exchange:         config.GetConfig().RMQConfig.Exchange,
+			QueuesProcessors: processor.GetHandlerMap(),
+		})
 
-		time.Sleep(10 * time.Second)
+		if err != nil {
+			log.Fatalf("Error while creating consumer: %s", err)
+		}
+		consumer.Start()
+		defer consumer.Stop()
+		processor.Start()
+		defer processor.Stop()
+		time.Sleep(60 * time.Second)
 	},
 }
 
