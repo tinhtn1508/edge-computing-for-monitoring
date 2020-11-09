@@ -10,9 +10,9 @@ import (
 	influxdb "github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
 
-	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/types"
 	influxdblib "github.com/tinhtn1508/edge-computing-for-monitor/go-lib/influxdb"
 	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/rmq"
+	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/types"
 )
 
 type PublishFunc func([]byte, []byte) error
@@ -76,7 +76,7 @@ func (p *CoreProcessor) collect() {
 	p.RLock()
 	defer p.RUnlock()
 	p.log.Infof("dang collect ne")
-	aggregated := make(map[string]*types.SensorSignal)
+	aggregated := make(types.SensorSignalTable)
 	for k, v := range p.recordTable {
 		if v.Timestamp.Add(p.recordLifetime).Unix() < time.Now().Unix() {
 			p.log.Errorf("Cai record nay (%s) --- %+v --- expire nha", k, v)
