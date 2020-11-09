@@ -5,4 +5,9 @@ type SensorSignal struct {
 	Value     float64 `json:"value"`
 }
 
+type KeyValuePair struct {
+	key   []byte
+	value []byte
+}
+
 type SensorSignalTable map[string]*SensorSignal
