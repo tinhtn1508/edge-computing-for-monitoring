@@ -63,6 +63,8 @@ func (c *GeneralConsumer) Init() error {
 		Brokers:   c.brokers,
 		Topic:     c.kafkaTopic,
 		Partition: c.partition,
+		MinBytes:  1,
+		MaxBytes:  1000000,
 	})
 	c.reader.SetOffset(c.offset)
 	c.stopChannel = make(chan bool)
