@@ -10,7 +10,7 @@ services:
       - edge
     restart: always
     healthcheck:
-      test: [ "CMD", "nc", "-z", "localhost", "5672" ]
+      test: ["CMD", "nc", "-z", "localhost", "5672"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -78,6 +78,8 @@ services:
     restart: always
     volumes:
       - ./../edge-node/processor:/app
+    environment:
+      EDGE_NODE_NAME: "edge-node-q10"
 
   edge-influxdb:
     image: "influxdb"
