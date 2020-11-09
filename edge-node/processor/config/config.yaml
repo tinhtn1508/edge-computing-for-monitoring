@@ -4,10 +4,10 @@ kafka:
   brokers:
     - "kafka:9092"
   partitions: 1
-  write-timeout: 500ms
+  write_timeout: 500ms
   topic: measurement
 rabbitmq:
-  host: "rabbitmq3"
+  host: "edge-rabbitmq3"
   port: 5672
   username: "guest"
   password: "guest"
@@ -19,7 +19,7 @@ core:
   record-lifetime: 1500ms
   collect-interval: 1s
 influxdb:
-  host: "influxdb"
+  host: "edge-influxdb"
   port: 8086
   write-timeout: 500ms
   batch-size: 20

@@ -18,6 +18,11 @@ services:
     networks:
       broker:
         ipv4_address: 172.28.0.10
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "9092" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
 
   kafdrop:
     image: obsidiandynamics/kafdrop
@@ -29,6 +34,9 @@ services:
       SERVER_SERVLET_CONTEXTPATH: /
     networks:
       - broker
+    depends_on:
+      kafka:
+        condition: service_healthy
 
 networks:
   broker:

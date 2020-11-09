@@ -1,26 +1,29 @@
 version: "3.3"
 services:
-  rabbitmq3:
+  edge-rabbitmq3:
     image: rabbitmq:3-management-alpine
     ports:
       - "15672:15672"
-      - "5672:5672"
     environment:
       RABBITMQ_ERLANG_COOKIE: "secret cookie here"
-    volumes:
-      - ./db:/var/lib/rabbitmq/mnesia/rabbit@rabbitmq3
     networks:
       - edge
     restart: always
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost", "5672" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
 
-  sensor1:
+  edge-sensor1:
     image: duongtomho/sensor:latest
     ports:
       - "5000:5000"
     networks:
       - edge
     depends_on:
-      - rabbitmq3
+      edge-rabbitmq3:
+        condition: service_healthy
     restart: always
     volumes:
       - ./../sensors:/sensors
@@ -31,23 +34,16 @@ services:
       RMQ_QUEUES: "measurement.sensors.sensor1"
       RMQ_MESSGAE_TYPE: "json"
       SERVER_API_PORT: 5000
-    deploy:
-      restart_policy:
-        condition: any
-        delay: 9s
-        window: 60s
-    command: >
-      sh -c "sleep 10 &&
-              python main.py"
 
-  sensor2:
+  edge-sensor2:
     image: duongtomho/sensor:latest
     ports:
       - "5001:5000"
     networks:
       - edge
     depends_on:
-      - rabbitmq3
+      edge-rabbitmq3:
+        condition: service_healthy
     restart: always
     volumes:
       - ./../sensors:/sensors
@@ -73,27 +69,32 @@ services:
       - edge
       - docker_broker
     depends_on:
-      - rabbitmq3
+      edge-rabbitmq3:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      edge-influxdb:
+        condition: service_healthy
     restart: always
     volumes:
       - ./../edge-node/processor:/app
 
-  influxdb:
+  edge-influxdb:
     image: "influxdb"
-    ports:
-      - "8086:8086"
-    # volumes:
-    #   - "../configsinfluxdb/.conf:/etc/influxdb/influxdb.conf"
     networks:
-      - edge
+      edge:
+        ipv4_address: 172.29.0.10
     restart: always
+    healthcheck:
+      test: "curl -f http://localhost:8086/ping"
+      interval: 10s
+      timeout: 10s
+      retries: 10
 
-  grafana:
+  edge-grafana:
     image: "grafana/grafana"
     ports:
       - "3000:3000"
-    links:
-      - influxdb:influxdb
     networks:
       - edge
     restart: always
@@ -101,5 +102,8 @@ services:
 networks:
   edge:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16
   docker_broker:
     external: true

@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/tinhtn1508/edge-computing-for-monitor/fog-node/processor/config"
+	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/influxdb"
 	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/kafka"
 	"go.uber.org/zap"
 )
@@ -54,6 +55,31 @@ var rootCmd = &cobra.Command{
 		if err := kafkaConsumer.StartConsuming(); err != nil {
 			log.Fatalf("error while start consuming kafka messages")
 		}
+
+		influxdbClient := influxdb.NewHTTPInfluxDBConnector(influxdb.HTTPInfluxDBConnectorDeps{
+			Log:     log,
+			Ctx:     globalContext,
+			Timeout: 500 * time.Millisecond,
+			Host:    config.GetConfig().InfluxDBConfig.Host,
+			Port:    config.GetConfig().InfluxDBConfig.Port,
+		})
+
+		if err := influxdbClient.Open(); err != nil {
+			log.Fatalf("error while opening influxdb connection: %s", err)
+		}
+
+		if err := influxdbClient.CreateNewDB("mytest"); err != nil {
+			log.Fatalf("error while creating new influxdb, %s", err)
+		}
+
+		influxdbWriter := influxdb.NewSimpleWriter(influxdb.WriterConfig{
+			Log:       log,
+			Ctx:       globalContext,
+			Batchsize: config.GetConfig().InfluxDBConfig.BatchSize,
+			Duration:  config.GetConfig().InfluxDBConfig.BatchTime,
+			DBName:    "mytest",
+		})
+		influxdbWriter.Init(influxdbClient.GetClient())
 
 		for {
 			time.Sleep(1 * time.Second)

@@ -1,5 +1,5 @@
 rabbitMQ:
-    host: "rabbitmq3"
+    host: "edge-rabbitmq3"
     port: 5672
     exchange: "measurment"
     topic: ${RMQ_TOPIC}
