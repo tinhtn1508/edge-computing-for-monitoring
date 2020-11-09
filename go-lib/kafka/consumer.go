@@ -3,7 +3,6 @@ package kafka
 import (
 	"context"
 	"fmt"
-	"time"
 
 	kafka "github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
@@ -22,44 +21,39 @@ type IConsumer interface {
 
 // GeneralConsumerDeps config for a GeneralConsumer
 type GeneralConsumerDeps struct {
-	Log           *zap.SugaredLogger
-	Ctx           context.Context
-	Topic         string
-	Brokers       []string
-	Partition     int
-	Offset        int64
-	SleepInterval time.Duration
-	ReadTimeout   time.Duration
-	Consume       ConsumingFunction
+	Log       *zap.SugaredLogger
+	Ctx       context.Context
+	Topic     string
+	Brokers   []string
+	Partition int
+	Offset    int64
+	Consume   ConsumingFunction
 }
 
 // GeneralConsumer is a backbone to build a consumer
 type GeneralConsumer struct {
-	log           *zap.SugaredLogger
-	ctx           context.Context
-	kafkaTopic    string
-	brokers       []string
-	partition     int
-	offset        int64
-	sleepInterval time.Duration
-	readTimeout   time.Duration
-	consume       ConsumingFunction
-	reader        *kafka.Reader
-	stopChannel   chan bool
+	log         *zap.SugaredLogger
+	ctx         context.Context
+	kafkaTopic  string
+	brokers     []string
+	partition   int
+	offset      int64
+	consume     ConsumingFunction
+	reader      *kafka.Reader
+	cancelFunc  context.CancelFunc
+	stopChannel chan bool
 }
 
 // NewGeneralConsumer create a new GeneralConsumer
 func NewGeneralConsumer(deps GeneralConsumerDeps) *GeneralConsumer {
 	return &GeneralConsumer{
-		log:           deps.Log,
-		ctx:           deps.Ctx,
-		kafkaTopic:    deps.Topic,
-		brokers:       deps.Brokers,
-		partition:     deps.Partition,
-		offset:        deps.Offset,
-		sleepInterval: deps.SleepInterval,
-		readTimeout:   deps.ReadTimeout,
-		consume:       deps.Consume,
+		log:        deps.Log,
+		ctx:        deps.Ctx,
+		kafkaTopic: deps.Topic,
+		brokers:    deps.Brokers,
+		partition:  deps.Partition,
+		offset:     deps.Offset,
+		consume:    deps.Consume,
 	}
 }
 
@@ -69,6 +63,8 @@ func (c *GeneralConsumer) Init() error {
 		Brokers:   c.brokers,
 		Topic:     c.kafkaTopic,
 		Partition: c.partition,
+		MinBytes:  1,
+		MaxBytes:  1000000,
 	})
 	c.reader.SetOffset(c.offset)
 	c.stopChannel = make(chan bool)
@@ -80,23 +76,20 @@ func (c *GeneralConsumer) StartConsuming() error {
 	if c.reader == nil {
 		return fmt.Errorf("Kafka reader haven't been started, call Init() first")
 	}
-	ticker := time.NewTicker(c.sleepInterval)
 	go func() {
 		for {
 			select {
 			case <-c.stopChannel:
 				return
-			case <-ticker.C:
-				for {
-					timeoutCtx, cancel := context.WithTimeout(c.ctx, c.readTimeout)
-					defer cancel()
-					msg, err := c.reader.ReadMessage(timeoutCtx)
-					if err != nil {
-						break
-					}
-					if !c.consume(msg.Key, msg.Value) {
-						break
-					}
+			default:
+				ctx, cancel := context.WithCancel(c.ctx)
+				c.cancelFunc = cancel
+				msg, err := c.reader.ReadMessage(ctx)
+				if err != nil {
+					continue
+				}
+				if !c.consume(msg.Key, msg.Value) {
+					break
 				}
 			}
 		}
@@ -109,6 +102,9 @@ func (c *GeneralConsumer) StopConsuming() {
 	if c.reader != nil {
 		c.reader.Close()
 		c.stopChannel <- true
+		if c.cancelFunc != nil {
+			c.cancelFunc()
+		}
 	}
 }
 

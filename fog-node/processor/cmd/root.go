@@ -35,14 +35,12 @@ var rootCmd = &cobra.Command{
 		}
 
 		kafkaConsumer := kafka.NewGeneralConsumer(kafka.GeneralConsumerDeps{
-			Log:           log,
-			Ctx:           globalContext,
-			Topic:         config.GetConfig().KafkaConfig.Topic,
-			Brokers:       config.GetConfig().KafkaConfig.Brokers,
-			Partition:     config.GetConfig().KafkaConfig.Partitions,
-			Offset:        -1,
-			SleepInterval: time.Duration(1),
-			ReadTimeout:   config.GetConfig().KafkaConfig.ReadTimeout,
+			Log:       log,
+			Ctx:       globalContext,
+			Topic:     config.GetConfig().KafkaConfig.Topic,
+			Brokers:   config.GetConfig().KafkaConfig.Brokers,
+			Partition: config.GetConfig().KafkaConfig.Partition,
+			Offset:    -1,
 			Consume: func(key []byte, value []byte) bool {
 				log.Infof("receive: [k - v]: %+w --- %+w", key, value)
 				return true
