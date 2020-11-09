@@ -6,8 +6,8 @@ type SensorSignal struct {
 }
 
 type KeyValuePair struct {
-	key   []byte
-	value []byte
+	Key   []byte
+	Value []byte
 }
 
 type SensorSignalTable map[string]*SensorSignal
