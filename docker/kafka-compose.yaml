@@ -3,7 +3,7 @@ services:
   zookeeper:
     image: wurstmeister/zookeeper
     networks:
-      - fog
+      - broker
 
   kafka:
     image: wurstmeister/kafka
@@ -16,7 +16,7 @@ services:
     ports:
       - "9092:9092"
     networks:
-      fog:
+      broker:
         ipv4_address: 172.28.0.10
 
   kafdrop:
@@ -28,10 +28,10 @@ services:
       JVM_OPTS: -Xms32M -Xmx64M
       SERVER_SERVLET_CONTEXTPATH: /
     networks:
-      - fog
+      - broker
 
 networks:
-  fog:
+  broker:
     driver: bridge
     ipam:
       config:
