@@ -37,13 +37,6 @@ type CoreConfig struct {
 	CollectInterval time.Duration `mapstructure:"collect-interval"`
 }
 
-type ErrorReport struct {
-	EdgeNode  string    `json:"edgenode"`
-	Sensor    string    `json:"sensor"`
-	Time      time.Time `json:"time"`
-	Describes string    `json:"describes"`
-}
-
 type CoreProcessorConfig struct {
 	Log                 *zap.SugaredLogger
 	CoreConfig          CoreConfig
@@ -117,14 +110,14 @@ func (p *CoreProcessor) _movingAverage(key string, data ListRecord) *types.Senso
 
 func (p *CoreProcessor) collect() {
 	p.log.Infof("Collecting !!!!!!!!")
-	aggregated := make(map[string]*types.SensorSignal)
-	errorTable := make(map[string]*ErrorReport)
+	aggregated := make(types.SensorSignalTable)
+	errorTable := make(map[string]*types.ErrorReport)
 
 	for key, records := range p.recordTable {
 		if averageRecord := p._movingAverage(key, records); averageRecord != nil {
 			aggregated[key] = averageRecord
 		} else {
-			errorTable[key] = &ErrorReport{
+			errorTable[key] = &types.ErrorReport{
 				EdgeNode:  p.edgeNodeName,
 				Sensor:    strings.Split(key, ".")[2],
 				Time:      time.Now(),

@@ -28,21 +28,21 @@ var rootCmd = &cobra.Command{
 			Log:     log,
 			Ctx:     globalContext,
 			Timeout: 500 * time.Millisecond,
-			Host:    config.GetConfig().KafkaConfig.Host,
+			Host:    config.GetConfig().KafkaMgtConfig.Host,
 		})
 		if err := kafkaClient.Open(); err != nil {
 			log.Fatalf("error while opening kafka connection: %s", err)
 		}
-		if err := kafkaClient.CreateTopics(config.GetConfig().KafkaConfig.Topic, 1, 1); err != nil {
+		if err := kafkaClient.CreateTopics(config.GetConfig().KafkaMgtConfig.Topic, 1, 1); err != nil {
 			log.Fatalf("error while creating kafka topic: %s", err)
 		}
 		kafkaWritter := kafka.NewSimpleProducer(kafka.SimpleProducerConfig{
 			Log:       log,
 			Ctx:       globalContext,
-			Topic:     config.GetConfig().KafkaConfig.Topic,
-			Brokers:   config.GetConfig().KafkaConfig.Brokers,
+			Topic:     config.GetConfig().KafkaMgtConfig.Topic,
+			Brokers:   config.GetConfig().KafkaMgtConfig.Brokers,
 			Batchsize: 1,
-			Timeout:   config.GetConfig().KafkaConfig.WriteTimeout,
+			Timeout:   config.GetConfig().KafkaMgtConfig.WriteTimeout,
 		})
 		if err := kafkaWritter.Start(); err != nil {
 			log.Fatalf("Cannot initialize kafka writter, error: %s", err)
@@ -55,10 +55,10 @@ var rootCmd = &cobra.Command{
 		kafkaErrorWritter := kafka.NewSimpleProducer(kafka.SimpleProducerConfig{
 			Log:       log,
 			Ctx:       globalContext,
-			Topic:     "error",
-			Brokers:   config.GetConfig().KafkaConfig.Brokers,
+			Topic:     config.GetConfig().KafkaErrConfig.Topic,
+			Brokers:   config.GetConfig().KafkaErrConfig.Brokers,
 			Batchsize: 1,
-			Timeout:   config.GetConfig().KafkaConfig.WriteTimeout,
+			Timeout:   config.GetConfig().KafkaErrConfig.WriteTimeout,
 		})
 		if err := kafkaErrorWritter.Start(); err != nil {
 			log.Fatalf("Cannot initialize kafka writter, error: %s", err)

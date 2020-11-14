@@ -14,7 +14,8 @@ import (
 
 // Config holds all the configurations of the tool
 type Config struct {
-	KafkaConfig    kafka.KafkaConfig  `mapstructure:"kafka"`
+	KafkaMgtConfig kafka.KafkaConfig  `mapstructure:"kafka_management"`
+	KafkaErrConfig kafka.KafkaConfig  `mapstructure:"kafka_error"`
 	RMQConfig      rmq.RabbitMQConfig `mapstructure:"rabbitmq"`
 	CoreConfig     core.CoreConfig    `mapstructure:"core"`
 	InfluxDBConfig influxdb.Config    `mapstructure:"influxdb"`
@@ -22,8 +23,8 @@ type Config struct {
 }
 
 // GetKafkaHost produces kafka hostname
-func (cfg *Config) GetKafkaHost() string {
-	return fmt.Sprintf("%s:%d", cfg.KafkaConfig.Host, cfg.KafkaConfig.Port)
+func (cfg *Config) GetKafkaMgtHost() string {
+	return fmt.Sprintf("%s:%d", cfg.KafkaMgtConfig.Host, cfg.KafkaMgtConfig.Port)
 }
 
 var values Config

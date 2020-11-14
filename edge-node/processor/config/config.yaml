@@ -1,4 +1,4 @@
-kafka:
+kafka_management:
   host: kafka
   port: 9092
   brokers:
@@ -6,6 +6,14 @@ kafka:
   partitions: 1
   write_timeout: 500ms
   topic: measurement
+kafka_error:
+  host: kafka
+  port: 9092
+  brokers:
+    - "kafka:9092"
+  partitions: 1
+  write_timeout: 500ms
+  topic: error
 rabbitmq:
   host: "edge-rabbitmq3"
   port: 5672
