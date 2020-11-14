@@ -284,6 +284,8 @@ github.com/tinhtn1508/edge-computing-for-monitor/go-lib v0.0.0-20201109143410-5d
 github.com/tinhtn1508/edge-computing-for-monitor/go-lib v0.0.0-20201109143410-5decf3b96f25/go.mod h1:b3mloMeRAjiTZUQh4Bme4y3ORyR0hihIEwU9nCg86nc=
 github.com/tinhtn1508/edge-computing-for-monitor/go-lib v0.0.0-20201109145841-b23535c03a21 h1:trH8pmVOapkr0R1FxmH1yXQsZ0ibYcYfw2blRXh/Icc=
 github.com/tinhtn1508/edge-computing-for-monitor/go-lib v0.0.0-20201109145841-b23535c03a21/go.mod h1:b3mloMeRAjiTZUQh4Bme4y3ORyR0hihIEwU9nCg86nc=
+github.com/tinhtn1508/edge-computing-for-monitor/go-lib v0.0.0-20201114072359-7b7fb4e300fc h1:T3P+F8+P+n9YRRb/GTxy0h0vtML6ENrm7lueWcVerfE=
+github.com/tinhtn1508/edge-computing-for-monitor/go-lib v0.0.0-20201114072359-7b7fb4e300fc/go.mod h1:b3mloMeRAjiTZUQh4Bme4y3ORyR0hihIEwU9nCg86nc=
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/willf/bitset v1.1.3/go.mod h1:RjeCKbqT1RxIR/KWY6phxZiaY1IyutSBfGjNPySAYV4=
