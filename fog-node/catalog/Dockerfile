@@ -1,19 +1,14 @@
 #Specify a base image
-FROM node:11
-
-RUN curl -o- -L https://yarnpkg.com/install.sh | bash
+FROM node:12
 
 #Specify a working directory
 WORKDIR /usr/app
 
 #Copy the dependencies file
-COPY ./package.json ./
-
-#Install dependencies
-RUN yarn  
-
-#Copy remaining files
 COPY ./ ./
 
+#Install dependencies
+RUN npm install
+
 #Default command
-CMD ["yarn","start"]
+CMD ["npm","start"]

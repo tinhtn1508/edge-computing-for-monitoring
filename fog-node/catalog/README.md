@@ -7,7 +7,7 @@
 
 | Software | Minimum version |
 | -------- | --------------- |
-| Node.js  | 14.x            |
+| Node.js  | 12.x            |
 | npm      | 6.x             |
 
 ## Databases
@@ -77,3 +77,7 @@ docker exec -t dev-postgres pg_dumpall -c -U catalog > dump_$(date +%Y-%m-%d_%H_
 ```
 docker exec -i dev-postgres psql --username catalog --password catalog catalog < dump_2020-11-08_14_18_46.sql
 ```
+
+
+npm install
+
