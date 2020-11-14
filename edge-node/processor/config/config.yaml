@@ -26,6 +26,13 @@ rabbitmq:
 core:
   record-lifetime: 1500ms
   collect-interval: 1s
+  limit:
+    - name: sensor1
+      upper: 15.0
+      lower: -15.0
+    - name: sensor2
+      upper: 20.0
+      lower: -20.0
 influxdb:
   host: "edge-influxdb"
   port: 8086
