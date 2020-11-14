@@ -20,7 +20,16 @@ type PublishFunc func([]byte, []byte) error
 type Record struct {
 	AppID     string
 	Timestamp time.Time
-	Body      []byte
+	Data      types.SensorSignal
+}
+
+type ListRecord []Record
+
+type ComsumeData struct {
+	Key   string
+	Appid string
+	Time  time.Time
+	Body  []byte
 }
 
 type CoreConfig struct {
@@ -28,12 +37,21 @@ type CoreConfig struct {
 	CollectInterval time.Duration `mapstructure:"collect-interval"`
 }
 
+type ErrorReport struct {
+	EdgeNode  string    `json:"edgenode"`
+	Sensor    string    `json:"sensor"`
+	Time      time.Time `json:"time"`
+	Describes string    `json:"describes"`
+}
+
 type CoreProcessorConfig struct {
-	Log             *zap.SugaredLogger
-	CoreConfig      CoreConfig
-	PublishCallback PublishFunc
-	InfluxDBWriter  influxdblib.IWriter
-	InfoKey         string
+	Log                 *zap.SugaredLogger
+	CoreConfig          CoreConfig
+	PublishCallback     PublishFunc
+	ErrorReportCallback PublishFunc
+	InfluxDBWriter      influxdblib.IWriter
+	InfoKey             string
+	EdgeNodeName        string
 }
 
 type ICoreProcessor interface {
@@ -44,17 +62,19 @@ type ICoreProcessor interface {
 }
 
 type CoreProcessor struct {
-	sync.RWMutex
 	log             *zap.SugaredLogger
 	stopChannel     chan bool
 	wg              *sync.WaitGroup
 	recordLifetime  time.Duration
 	collectInterval time.Duration
 	handlerTable    map[string]rmq.DataConsumeFunc
-	recordTable     map[string]Record
+	recordTable     map[string]ListRecord
+	recordChan      chan ComsumeData
 	publishFunc     PublishFunc
+	errReportFunc   PublishFunc
 	writer          influxdblib.IWriter
 	infoKey         string
+	edgeNodeName    string
 }
 
 func NewCoreProcessor(cfg CoreProcessorConfig) ICoreProcessor {
@@ -65,37 +85,69 @@ func NewCoreProcessor(cfg CoreProcessorConfig) ICoreProcessor {
 		recordLifetime:  cfg.CoreConfig.RecordLifeTime,
 		collectInterval: cfg.CoreConfig.CollectInterval,
 		handlerTable:    make(map[string]rmq.DataConsumeFunc),
-		recordTable:     make(map[string]Record),
+		recordTable:     make(map[string]ListRecord),
+		recordChan:      make(chan ComsumeData, 5),
 		publishFunc:     cfg.PublishCallback,
+		errReportFunc:   cfg.ErrorReportCallback,
 		infoKey:         cfg.InfoKey,
 		writer:          cfg.InfluxDBWriter,
+		edgeNodeName:    cfg.EdgeNodeName,
 	}
 }
 
+func (p *CoreProcessor) _movingAverage(key string, data ListRecord) *types.SensorSignal {
+	var num uint64
+	var sumTime uint64
+	var sumValue float64
+	for _, record := range data {
+		if record.Timestamp.Add(p.recordLifetime).Unix() < time.Now().Unix() {
+			p.log.Errorf("Record (%s) --- %+v --- expire !!!!!!!!!!!", key, record)
+			continue
+		}
+		num++
+		sumTime += record.Data.TimeStamp
+		sumValue += record.Data.Value
+	}
+
+	if num == 0 {
+		return nil
+	}
+	return &types.SensorSignal{sumTime / num, sumValue / float64(num)}
+}
+
 func (p *CoreProcessor) collect() {
-	p.RLock()
-	defer p.RUnlock()
-	p.log.Infof("dang collect ne")
-	aggregated := make(types.SensorSignalTable)
-	for k, v := range p.recordTable {
-		if v.Timestamp.Add(p.recordLifetime).Unix() < time.Now().Unix() {
-			p.log.Errorf("Cai record nay (%s) --- %+v --- expire nha", k, v)
+	p.log.Infof("Collecting !!!!!!!!")
+	aggregated := make(map[string]*types.SensorSignal)
+	errorTable := make(map[string]*ErrorReport)
+
+	for key, records := range p.recordTable {
+		if averageRecord := p._movingAverage(key, records); averageRecord != nil {
+			aggregated[key] = averageRecord
 		} else {
-			p.log.Infof("Cai record nay (%s) valid ne: %+v", k, v)
-			signal := &types.SensorSignal{}
-			if err := json.Unmarshal(v.Body, signal); err == nil {
-				aggregated[k] = signal
-			} else {
-				p.log.Errorf("Malformed number: %s / Error: %s", v.Body, err)
+			errorTable[key] = &ErrorReport{
+				EdgeNode:  p.edgeNodeName,
+				Sensor:    strings.Split(key, ".")[2],
+				Time:      time.Now(),
+				Describes: "Lost connection",
 			}
 		}
 	}
+
 	if bjson, err := json.Marshal(aggregated); err != nil {
 		p.log.Errorf("Cannot produce json for %+v / Error: %s", aggregated, err)
-	} else if p.publishFunc != nil {
+	} else if p.publishFunc != nil && len(aggregated) > 0 {
 		p.publishFunc([]byte(fmt.Sprintf("%s-%d", p.infoKey, time.Now().Unix())), bjson)
 	}
-	p.log.Infof("can phai aggregate info ne")
+
+	if bjson, err := json.Marshal(errorTable); err != nil {
+		p.log.Errorf("Cannot produce json for %+v / Error: %s", errorTable, err)
+	} else if p.errReportFunc != nil && len(errorTable) > 0 {
+		p.errReportFunc([]byte(fmt.Sprintf("%s-%d", "error", time.Now().Unix())), bjson)
+	}
+
+	for key := range p.recordTable {
+		p.recordTable[key] = nil
+	}
 }
 
 func (p *CoreProcessor) _parseInfluxInfo(key string) (string, map[string]string) {
@@ -116,11 +168,42 @@ func (p *CoreProcessor) Start() {
 			select {
 			case <-ticker.C:
 				p.collect()
+			case record := <-p.recordChan:
+				p._comsumeWorker(record)
 			case <-p.stopChannel:
 				return
 			}
 		}
 	}()
+}
+
+func (p *CoreProcessor) _comsumeWorker(d ComsumeData) {
+	data := &types.SensorSignal{}
+	if err := json.Unmarshal(d.Body, data); err != nil {
+		p.log.Errorf("Malformed number: %s / Error: %s", d.Body, err)
+		return
+	}
+	p.recordTable[d.Key] = append(p.recordTable[d.Key], Record{
+		d.Appid, d.Time, *data,
+	})
+
+	measurement, tags := p._parseInfluxInfo(d.Key)
+
+	if measurement != "" && tags != nil {
+		if point, err := influxdb.NewPoint(
+			measurement,
+			tags,
+			map[string]interface{}{
+				"value": data.Value,
+			},
+			time.Unix(0, int64(data.TimeStamp)),
+		); err != nil {
+			p.log.Errorf("Error while create a new point, %w", err)
+			return
+		} else {
+			p.writer.Write(point)
+		}
+	}
 }
 
 func (p *CoreProcessor) Stop() {
@@ -134,36 +217,14 @@ func (p *CoreProcessor) AddConsumingTask(key string) (rmq.DataConsumeFunc, error
 	}
 
 	handler := func(appid string, t time.Time, body []byte) error {
-		p.Lock()
-		defer p.Unlock()
-		p.recordTable[key] = Record{
-			appid, t, body,
-		}
-
-		data := &types.SensorSignal{}
-		if err := json.Unmarshal(body, data); err != nil {
-			return fmt.Errorf("Malformed number: %s / Error: %s", body, err)
-		}
-
-		measurement, tags := p._parseInfluxInfo(key)
-
-		if measurement != "" && tags != nil {
-			if point, err := influxdb.NewPoint(
-				measurement,
-				tags,
-				map[string]interface{}{
-					"value": data.Value,
-				},
-				time.Unix(0, int64(data.TimeStamp)),
-			); err != nil {
-				return fmt.Errorf("Error while create a new point, %w", err)
-			} else {
-				p.writer.Write(point)
-			}
+		p.recordChan <- ComsumeData{
+			Key:   key,
+			Appid: appid,
+			Time:  t,
+			Body:  body,
 		}
 		return nil
 	}
-
 	p.handlerTable[key] = handler
 
 	return handler, nil

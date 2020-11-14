@@ -24,3 +24,4 @@ influxdb:
   write-timeout: 500ms
   batch-size: 20
   batch-time: 5s
+edge_node_name:
