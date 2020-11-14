@@ -48,6 +48,22 @@ var rootCmd = &cobra.Command{
 			log.Fatalf("Cannot initialize kafka writter, error: %s", err)
 		}
 
+		// KafkaErrorWriter
+		if err := kafkaClient.CreateTopics("error", 1, 1); err != nil {
+			log.Fatalf("error while creating kafka error topic: %s", err)
+		}
+		kafkaErrorWritter := kafka.NewSimpleProducer(kafka.SimpleProducerConfig{
+			Log:       log,
+			Ctx:       globalContext,
+			Topic:     "error",
+			Brokers:   config.GetConfig().KafkaConfig.Brokers,
+			Batchsize: 1,
+			Timeout:   config.GetConfig().KafkaConfig.WriteTimeout,
+		})
+		if err := kafkaErrorWritter.Start(); err != nil {
+			log.Fatalf("Cannot initialize kafka writter, error: %s", err)
+		}
+
 		influxdbClient := influxdb.NewHTTPInfluxDBConnector(influxdb.HTTPInfluxDBConnectorDeps{
 			Log:     log,
 			Ctx:     globalContext,
@@ -77,8 +93,10 @@ var rootCmd = &cobra.Command{
 			log,
 			config.GetConfig().CoreConfig,
 			kafkaWritter.Produce,
+			kafkaErrorWritter.Produce,
 			influxdbWriter,
 			"measurement",
+			config.GetConfig().EdgeNodeName,
 		})
 		for _, q := range config.GetConfig().RMQConfig.Queues {
 			processor.AddConsumingTask(q)

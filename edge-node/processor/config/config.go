@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/spf13/viper"
 	"github.com/tinhtn1508/edge-computing-for-monitor/edge-node/processor/core"
@@ -17,6 +18,7 @@ type Config struct {
 	RMQConfig      rmq.RabbitMQConfig `mapstructure:"rabbitmq"`
 	CoreConfig     core.CoreConfig    `mapstructure:"core"`
 	InfluxDBConfig influxdb.Config    `mapstructure:"influxdb"`
+	EdgeNodeName   string             `mapstructure:"edge_node_name"`
 }
 
 // GetKafkaHost produces kafka hostname
@@ -30,6 +32,7 @@ func init() {
 	config := viper.New()
 	config.SetConfigName("config")
 	config.AddConfigPath("./config/")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	config.AutomaticEnv()
 
 	if err := config.ReadInConfig(); err != nil {
