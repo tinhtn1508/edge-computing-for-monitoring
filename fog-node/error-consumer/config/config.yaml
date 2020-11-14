@@ -1,0 +1,9 @@
+kafka:
+  host: kafka
+  port: 9092
+  brokers:
+    - "kafka:9092"
+  partition: 0
+  write_timeout: 500ms
+  topic: error
+  
