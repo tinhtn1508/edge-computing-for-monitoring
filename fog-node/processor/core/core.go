@@ -1,7 +1,10 @@
 package core
 
 import (
+	"encoding/json"
+	"strings"
 	"sync"
+	"time"
 
 	influxdb "github.com/influxdata/influxdb/client/v2"
 	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/types"
@@ -47,11 +50,47 @@ func (c *core) Start() {
 			case <-c.stopChannel:
 				return
 			case pair := <-c.messChannel:
-				c.log.Infof("key ne fence: %s --- value ne: %s", pair.Key, pair.Value)
-				c.log.Infof("Fence xu ly message o day roi gui no len influxdb nghen. Minh dung cai c.writepoint de gui nghen")
+				signalSensorTable := &types.SensorSignalTable{}
+				if err := json.Unmarshal(pair.Value, signalSensorTable); err != nil {
+					c.log.Errorf("Malformed number: %s / Error: %s", pair.Value, err)
+					return
+				}
+
+				for k, v := range *signalSensorTable {
+					measurement, tags := c._parseInfluxInfo(string(pair.Key), k)
+					if measurement != "" && tags != nil {
+						if point, err := influxdb.NewPoint(
+							measurement,
+							tags,
+							map[string]interface{}{
+								"value": v.Value,
+							},
+							time.Unix(0, int64(v.TimeStamp)),
+						); err != nil {
+							c.log.Errorf("Error while create a new point, %w", err)
+						} else {
+							c.writepoint(point)
+						}
+					}
+				}
 			}
 		}
 	}()
+}
+
+func (c *core) _parseInfluxInfo(keyKafka string, keySignalSensor string) (string, map[string]string) {
+	params := strings.Split(keyKafka, ".")
+	if len(params) != 2 {
+		c.log.Errorf("Incorret key format, %s", keyKafka)
+		return "", nil
+	}
+
+	p := strings.Split(keySignalSensor, ".")
+	if len(p) != 3 {
+		c.log.Errorf("Incorret key format, %s", keySignalSensor)
+		return "", nil
+	}
+	return p[0], map[string]string{"edge-node": params[0], p[1]: p[2]}
 }
 
 func (c *core) Stop() {

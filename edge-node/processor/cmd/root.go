@@ -94,7 +94,7 @@ var rootCmd = &cobra.Command{
 			config.GetConfig().CoreConfig,
 			kafkaWritter.Produce,
 			kafkaErrorWritter.Produce,
-			influxdbWriter,
+			influxdbWriter.Write,
 			"measurement",
 			config.GetConfig().EdgeNodeName,
 		})

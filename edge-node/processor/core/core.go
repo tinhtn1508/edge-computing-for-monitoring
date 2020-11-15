@@ -10,12 +10,12 @@ import (
 	influxdb "github.com/influxdata/influxdb/client/v2"
 	"go.uber.org/zap"
 
-	influxdblib "github.com/tinhtn1508/edge-computing-for-monitor/go-lib/influxdb"
 	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/rmq"
 	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/types"
 )
 
 type PublishFunc func([]byte, []byte) error
+type WriteInfluxPointFunc func(info *influxdb.Point) error
 
 type Record struct {
 	AppID     string
@@ -32,9 +32,16 @@ type ComsumeData struct {
 	Body  []byte
 }
 
+type SensorSafeRange struct {
+	Name  string
+	Upper float64
+	Lower float64
+}
+
 type CoreConfig struct {
-	RecordLifeTime  time.Duration `mapstructure:"record-lifetime"`
-	CollectInterval time.Duration `mapstructure:"collect-interval"`
+	RecordLifeTime  time.Duration     `mapstructure:"record-lifetime"`
+	CollectInterval time.Duration     `mapstructure:"collect-interval"`
+	Limit           []SensorSafeRange `mapstructure:"limit"`
 }
 
 type CoreProcessorConfig struct {
@@ -42,7 +49,7 @@ type CoreProcessorConfig struct {
 	CoreConfig          CoreConfig
 	PublishCallback     PublishFunc
 	ErrorReportCallback PublishFunc
-	InfluxDBWriter      influxdblib.IWriter
+	WritePoint          WriteInfluxPointFunc
 	InfoKey             string
 	EdgeNodeName        string
 }
@@ -55,42 +62,48 @@ type ICoreProcessor interface {
 }
 
 type CoreProcessor struct {
-	log             *zap.SugaredLogger
-	stopChannel     chan bool
-	wg              *sync.WaitGroup
-	recordLifetime  time.Duration
-	collectInterval time.Duration
-	handlerTable    map[string]rmq.DataConsumeFunc
-	recordTable     map[string]ListRecord
-	recordChan      chan ComsumeData
-	publishFunc     PublishFunc
-	errReportFunc   PublishFunc
-	writer          influxdblib.IWriter
-	infoKey         string
-	edgeNodeName    string
+	log              *zap.SugaredLogger
+	stopChannel      chan bool
+	wg               *sync.WaitGroup
+	recordLifetime   time.Duration
+	collectInterval  time.Duration
+	handlerTable     map[string]rmq.DataConsumeFunc
+	recordTable      map[string]ListRecord
+	recordChan       chan ComsumeData
+	publishFunc      PublishFunc
+	errReportFunc    PublishFunc
+	writepoint       WriteInfluxPointFunc
+	infoKey          string
+	edgeNodeName     string
+	sensorSafeRanges []SensorSafeRange
 }
 
 func NewCoreProcessor(cfg CoreProcessorConfig) ICoreProcessor {
 	return &CoreProcessor{
-		log:             cfg.Log,
-		stopChannel:     make(chan bool),
-		wg:              &sync.WaitGroup{},
-		recordLifetime:  cfg.CoreConfig.RecordLifeTime,
-		collectInterval: cfg.CoreConfig.CollectInterval,
-		handlerTable:    make(map[string]rmq.DataConsumeFunc),
-		recordTable:     make(map[string]ListRecord),
-		recordChan:      make(chan ComsumeData, 5),
-		publishFunc:     cfg.PublishCallback,
-		errReportFunc:   cfg.ErrorReportCallback,
-		infoKey:         cfg.InfoKey,
-		writer:          cfg.InfluxDBWriter,
-		edgeNodeName:    cfg.EdgeNodeName,
+		log:              cfg.Log,
+		stopChannel:      make(chan bool),
+		wg:               &sync.WaitGroup{},
+		recordLifetime:   cfg.CoreConfig.RecordLifeTime,
+		collectInterval:  cfg.CoreConfig.CollectInterval,
+		handlerTable:     make(map[string]rmq.DataConsumeFunc),
+		recordTable:      make(map[string]ListRecord),
+		recordChan:       make(chan ComsumeData, 10),
+		publishFunc:      cfg.PublishCallback,
+		errReportFunc:    cfg.ErrorReportCallback,
+		infoKey:          cfg.InfoKey,
+		writepoint:       cfg.WritePoint,
+		edgeNodeName:     cfg.EdgeNodeName,
+		sensorSafeRanges: cfg.CoreConfig.Limit,
 	}
 }
 
 func (p *CoreProcessor) _movingAverage(key string, data ListRecord) *types.SensorSignal {
-	var num uint64
+	if data == nil {
+		return nil
+	}
+
 	var sumTime uint64
+	var num uint64
 	var sumValue float64
 	for _, record := range data {
 		if record.Timestamp.Add(p.recordLifetime).Unix() < time.Now().Unix() {
@@ -101,41 +114,68 @@ func (p *CoreProcessor) _movingAverage(key string, data ListRecord) *types.Senso
 		sumTime += record.Data.TimeStamp
 		sumValue += record.Data.Value
 	}
-
-	if num == 0 {
-		return nil
-	}
 	return &types.SensorSignal{sumTime / num, sumValue / float64(num)}
 }
 
 func (p *CoreProcessor) collect() {
-	p.log.Infof("Collecting !!!!!!!!")
 	aggregated := make(types.SensorSignalTable)
 	errorTable := make(map[string]*types.ErrorReport)
+	boundRangeTable := make(map[string]*types.ErrorReport)
+
+	boundRangeAdder := func(key string, averageRecord *types.SensorSignal) {
+		name := strings.Split(key, ".")[2]
+		for _, e := range p.sensorSafeRanges {
+			if e.Name == name {
+				if averageRecord.Value > e.Upper {
+					boundRangeTable[key] = &types.ErrorReport{
+						EdgeNode:  p.edgeNodeName,
+						Sensor:    name,
+						Time:      time.Unix(0, int64(averageRecord.TimeStamp)),
+						Describes: "Upper Error",
+					}
+				} else if averageRecord.Value < e.Lower {
+					boundRangeTable[key] = &types.ErrorReport{
+						EdgeNode:  p.edgeNodeName,
+						Sensor:    name,
+						Time:      time.Unix(0, int64(averageRecord.TimeStamp)),
+						Describes: "Lower Error",
+					}
+				}
+			}
+		}
+	}
 
 	for key, records := range p.recordTable {
-		if averageRecord := p._movingAverage(key, records); averageRecord != nil {
-			aggregated[key] = averageRecord
-		} else {
+		averageRecord := p._movingAverage(key, records)
+		if averageRecord == nil {
 			errorTable[key] = &types.ErrorReport{
 				EdgeNode:  p.edgeNodeName,
 				Sensor:    strings.Split(key, ".")[2],
 				Time:      time.Now(),
 				Describes: "Lost connection",
 			}
+		} else {
+			boundRangeAdder(key, averageRecord)
+			aggregated[key] = averageRecord
 		}
 	}
 
 	if bjson, err := json.Marshal(aggregated); err != nil {
 		p.log.Errorf("Cannot produce json for %+v / Error: %s", aggregated, err)
 	} else if p.publishFunc != nil && len(aggregated) > 0 {
-		p.publishFunc([]byte(fmt.Sprintf("%s-%d", p.infoKey, time.Now().Unix())), bjson)
+		p.publishFunc([]byte(fmt.Sprintf("%s.%d", p.edgeNodeName, time.Now().Unix())), bjson)
 	}
 
 	if bjson, err := json.Marshal(errorTable); err != nil {
 		p.log.Errorf("Cannot produce json for %+v / Error: %s", errorTable, err)
 	} else if p.errReportFunc != nil && len(errorTable) > 0 {
-		p.errReportFunc([]byte(fmt.Sprintf("%s-%d", "error", time.Now().Unix())), bjson)
+		p.errReportFunc([]byte(fmt.Sprintf("%s.%d", p.edgeNodeName, time.Now().Unix())), bjson)
+	}
+
+	if bjson, err := json.Marshal(boundRangeTable); err != nil {
+		p.log.Errorf("Cannot produce json for %+v / Error: %s", boundRangeTable, err)
+	} else if p.errReportFunc != nil && len(boundRangeTable) > 0 {
+		p.errReportFunc([]byte(fmt.Sprintf("%s.%d", p.edgeNodeName, time.Now().Unix())), bjson)
 	}
 
 	for key := range p.recordTable {
@@ -194,7 +234,7 @@ func (p *CoreProcessor) _comsumeWorker(d ComsumeData) {
 			p.log.Errorf("Error while create a new point, %w", err)
 			return
 		} else {
-			p.writer.Write(point)
+			p.writepoint(point)
 		}
 	}
 }
