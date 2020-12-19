@@ -263,10 +263,12 @@ github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81P
 github.com/subosito/gotenv v1.2.0 h1:Slr1R9HxAlEKefgq5jn9U+DnETlIUa6HfgEzj0g5d7s=
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
 github.com/tinhtn1508/edge-computing-for-monitor v0.0.0-20201109150408-805b27efc8bf h1:mYECq6GLAplulZS8/ihmYwNG1sZypIG8Rt0LgBCaH8E=
+github.com/tinhtn1508/edge-computing-for-monitor v0.0.0-20201114084251-b837e2efbcc0 h1:UWt6auVtum65GIXPxIQFdviJ5dqY81Ux/YK5H2sSM/U=
 github.com/tinhtn1508/edge-computing-for-monitor/fog-node/processor v0.0.0-20201109150408-805b27efc8bf h1:0j/vNf+QPU/rFifIqPyWH2DMA7OPGJCYqJHruyxPJh8=
 github.com/tinhtn1508/edge-computing-for-monitor/fog-node/processor v0.0.0-20201109150408-805b27efc8bf/go.mod h1:NDm/3slo+mrkQHWdYDucjU2y6RB7bzB1eBa9iXmZSe0=
 github.com/tinhtn1508/edge-computing-for-monitor/go-lib v0.0.0-20201109145841-b23535c03a21 h1:trH8pmVOapkr0R1FxmH1yXQsZ0ibYcYfw2blRXh/Icc=
 github.com/tinhtn1508/edge-computing-for-monitor/go-lib v0.0.0-20201109145841-b23535c03a21/go.mod h1:b3mloMeRAjiTZUQh4Bme4y3ORyR0hihIEwU9nCg86nc=
+github.com/tinhtn1508/edge-computing-for-monitor/go-lib v0.0.0-20201114084251-b837e2efbcc0 h1:+2+oiXsMKeOYiV+5B3EACdnftlXxdn5Bh1w/ax4rVkA=
 github.com/tinylib/msgp v1.0.2/go.mod h1:+d+yLhGm8mzTaHzB+wgMYrodPfmZrzkirds8fDWklFE=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/willf/bitset v1.1.3/go.mod h1:RjeCKbqT1RxIR/KWY6phxZiaY1IyutSBfGjNPySAYV4=

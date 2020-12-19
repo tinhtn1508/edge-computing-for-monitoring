@@ -20,3 +20,5 @@ type ErrorReport struct {
 	Time      time.Time `json:"time"`
 	Describes string    `json:"describes"`
 }
+
+type SensorErrorReportTable map[string]*ErrorReport

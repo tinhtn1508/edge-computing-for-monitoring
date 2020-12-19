@@ -111,7 +111,7 @@ func (p *CoreProcessor) _movingAverage(key string, data ListRecord) *types.Senso
 func (p *CoreProcessor) collect() {
 	p.log.Infof("Collecting !!!!!!!!")
 	aggregated := make(types.SensorSignalTable)
-	errorTable := make(map[string]*types.ErrorReport)
+	errorTable := make(types.SensorErrorReportTable)
 
 	for key, records := range p.recordTable {
 		if averageRecord := p._movingAverage(key, records); averageRecord != nil {

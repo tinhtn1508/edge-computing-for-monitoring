@@ -71,8 +71,8 @@ services:
     depends_on:
       edge-rabbitmq3:
         condition: service_healthy
-      kafka:
-        condition: service_healthy
+      # kafka:
+      #   condition: service_healthy
       edge-influxdb:
         condition: service_healthy
     restart: always
