@@ -13,7 +13,7 @@ import (
 type HttpReturnFunc func(statusCode int, body []byte) bool
 
 type IHttpClient interface {
-	DoGetJson() error
+	DoGetJson(values *url.Values) error
 	DoPostJson(*url.Values, interface{}) error
 }
 
@@ -63,7 +63,7 @@ func (c *httpClient) getUrl(values *url.Values) string {
 		return c.url
 	}
 
-	return c.url + values.Encode()
+	return c.url + "?" + values.Encode()
 }
 
 func (c *httpClient) DoGetJson(values *url.Values) error {
