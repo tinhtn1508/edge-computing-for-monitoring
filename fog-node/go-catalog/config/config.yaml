@@ -1,0 +1,11 @@
+psql:
+  host: fog-psql
+  port: 5432
+  username: postgres
+  password: postgres
+  dbname: catalog
+  querytimeout: 1s
+  healthcheck_interval: 1s
+
+server:
+  port: 8080
