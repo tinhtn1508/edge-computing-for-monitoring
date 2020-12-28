@@ -28,7 +28,9 @@ var rootCmd = &cobra.Command{
 			Config: config.GetConfig().PsqlConfig,
 		})
 
-		sqlClient.Start()
+		if err := sqlClient.Start(); err != nil {
+			log.Fatalf("Failed to init DB: %s", err)
+		}
 
 		apiHandler := handler.NewHandler(handler.HandlerDeps{
 			Log:     log,

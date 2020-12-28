@@ -3,6 +3,7 @@ package psqlclient
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"time"
 
 	"database/sql"
@@ -21,6 +22,7 @@ type PsqlConfig struct {
 	DBname              string        `mapstructure:"dbname"`
 	QueryTimeout        time.Duration `mapstructure:"querytimeout"`
 	HealthcheckInterval time.Duration `mapstructure:"healthcheck_interval"`
+	InitSchema          string        `mapstructure:"init_schema"`
 }
 
 func (pc *PsqlConfig) GetInfo() string {
@@ -37,11 +39,12 @@ type PsqlDeps struct {
 }
 
 type IPsqlClient interface {
-	Start()
+	Start() error
 	Stop()
 	Isok() bool
 	DBExec(string, ...interface{}) error
 	QueryRows(RowHandlingFunc, string, ...interface{}) error
+	ExecFromFile(string) error
 }
 
 type psqlClient struct {
@@ -52,6 +55,7 @@ type psqlClient struct {
 	username            string
 	password            string
 	dbname              string
+	initSchema          string
 	querytimeout        time.Duration
 	healthcheckInterval time.Duration
 	iamok               bool
@@ -81,6 +85,7 @@ func NewPsqlClient(deps PsqlDeps) IPsqlClient {
 		username:            deps.Config.Username,
 		password:            deps.Config.Password,
 		dbname:              deps.Config.DBname,
+		initSchema:          deps.Config.InitSchema,
 		querytimeout:        deps.Config.QueryTimeout,
 		healthcheckInterval: deps.Config.HealthcheckInterval,
 		client:              db,
@@ -105,8 +110,26 @@ func (pc *psqlClient) startHealthcheck() {
 	}()
 }
 
-func (pc *psqlClient) Start() {
+func (pc *psqlClient) ExecFromFile(path string) error {
+	query, err := ioutil.ReadFile(pc.initSchema)
+	if err != nil {
+		return err
+	}
+	queryStr := string(query)
+	if err := pc.DBExec(queryStr); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (pc *psqlClient) Start() error {
+	if pc.initSchema != "" {
+		if err := pc.ExecFromFile(pc.initSchema); err != nil {
+			return err
+		}
+	}
 	pc.startHealthcheck()
+	return nil
 }
 
 func (pc *psqlClient) Stop() {
@@ -125,7 +148,7 @@ func (pc *psqlClient) DBExec(cmd string, args ...interface{}) error {
 	timeoutCtx, cancel := context.WithTimeout(pc.ctx, pc.querytimeout)
 	defer cancel()
 
-	_, err := pc.client.ExecContext(timeoutCtx, cmd, args)
+	_, err := pc.client.ExecContext(timeoutCtx, cmd, args...)
 	return err
 }
 
@@ -137,7 +160,7 @@ func (pc *psqlClient) QueryRows(processfn RowHandlingFunc, cmd string, args ...i
 	timeoutCtx, cancel := context.WithTimeout(pc.ctx, pc.querytimeout)
 	defer cancel()
 
-	rows, err := pc.client.QueryContext(timeoutCtx, cmd, args)
+	rows, err := pc.client.QueryContext(timeoutCtx, cmd, args...)
 	defer rows.Close()
 	if err != nil {
 		return err

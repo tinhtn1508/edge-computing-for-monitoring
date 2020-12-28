@@ -1,0 +1,13 @@
+tables:
+  worker_groups: ./tables/worker_groups.csv
+  workers: ./tables/workers.csv
+  factories: ./tables/factories.csv
+  sensors: ./tables/sensors.csv
+
+psql:
+  host: localhost
+  port: 5432
+  username: postgres
+  password: postgres
+  dbname: catalog
+  init_schema: ../go-catalog/sql/tables.sql

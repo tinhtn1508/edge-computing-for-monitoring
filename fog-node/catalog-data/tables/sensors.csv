@@ -1,0 +1,5 @@
+sensor_id,factory_id,description
+sensor1,edge_node_1,sensor1 in factory 1
+sensor2,edge_node_1,sensor2 in factory 1
+sensor1,edge_node_2,sensor1 in factory 2
+sensor2,edge_node_2,sensor2 in factory 2
