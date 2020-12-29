@@ -1,38 +1,38 @@
 version: "3.3"
 services:
-  # fog-processor:
-  #   image: trhoangtuan96/fog-processor:latest
-  #   networks:
-  #     - fog
-  #     - docker_broker
-  #   restart: always
-  #   volumes:
-  #     - ./../fog-node/processor:/app
-  #   depends_on:
-  #     kafka:
-  #       condition: service_healthy
-  #     fog-influxdb:
-  #       condition: service_healthy
+  fog-processor:
+    image: trhoangtuan96/fog-processor:latest
+    networks:
+      - fog
+      - docker_broker
+    restart: always
+    volumes:
+      - ./../fog-node/processor:/app
+    depends_on:
+      kafka:
+        condition: service_healthy
+      fog-influxdb:
+        condition: service_healthy
 
-  # fog-influxdb:
-  #   image: "influxdb"
-  #   networks:
-  #     fog:
-  #       ipv4_address: 172.30.0.10
-  #   restart: always
-  #   healthcheck:
-  #     test: "curl -f http://localhost:8086/ping"
-  #     interval: 10s
-  #     timeout: 10s
-  #     retries: 10
+  fog-influxdb:
+    image: "influxdb"
+    networks:
+      fog:
+        ipv4_address: 172.30.0.10
+    restart: always
+    healthcheck:
+      test: "curl -f http://localhost:8086/ping"
+      interval: 10s
+      timeout: 10s
+      retries: 10
 
-  # fog-grafana:
-  #   image: "grafana/grafana"
-  #   ports:
-  #     - "3100:3000"
-  #   networks:
-  #     - fog
-  #   restart: always
+  fog-grafana:
+    image: "grafana/grafana"
+    ports:
+      - "3100:3000"
+    networks:
+      - fog
+    restart: always
 
   fog-psql:
     image: "postgres:alpine"
@@ -54,7 +54,6 @@ services:
     image: trhoangtuan96/fog-processor:latest
     networks:
       - fog
-      # - docker_broker
     restart: always
     volumes:
       - ./../fog-node/go-catalog:/app
@@ -68,5 +67,5 @@ networks:
     ipam:
       config:
         - subnet: 172.30.0.0/16
-  # docker_broker:
-  #   external: true
+  docker_broker:
+    external: true
