@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/spf13/viper"
-	"github.com/tinhtn1508/edge-computing-for-monitor/fog-node/go-catalog/psqlclient"
+	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/psqlclient"
 )
 
 // Config holds all the configurations of the tool

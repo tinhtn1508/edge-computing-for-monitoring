@@ -7,8 +7,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/tinhtn1508/edge-computing-for-monitor/fog-node/go-catalog/psqlclient"
 	"github.com/tinhtn1508/edge-computing-for-monitor/fog-node/go-catalog/types"
+	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/psqlclient"
 )
 
 type IPsqlProcessor interface {
