@@ -11,3 +11,4 @@ psql:
   password: postgres
   dbname: catalog
   init_schema: ../go-catalog/sql/tables.sql
+  functions: ../go-catalog/sql/functions.sql

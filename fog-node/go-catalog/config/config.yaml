@@ -6,7 +6,7 @@ psql:
   dbname: catalog
   querytimeout: 1s
   healthcheck_interval: 1s
-  init_schema: ./sql/tables.sql
+  init_schema: ["./sql/tables.sql", "./sql/functions.sql"]
 
 server:
   port: 8080

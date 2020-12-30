@@ -29,6 +29,12 @@ def initPsql(psqlConfig: Dict[str, Any]) -> Any:
         schema: str = fd.read()
         log.info(f"apply schema: {schema}")
         connection.cursor().execute(schema)
+
+    with open(psqlConfig["functions"]) as fd:
+        functions: str = fd.read()
+        log.info(f"apply functions: {functions}")
+        connection.cursor().execute(functions)
+
     connection.commit()
     return connection
 

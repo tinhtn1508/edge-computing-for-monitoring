@@ -13,7 +13,7 @@ import (
 
 	"github.com/tinhtn1508/edge-computing-for-monitor/fog-node/go-catalog/config"
 	"github.com/tinhtn1508/edge-computing-for-monitor/fog-node/go-catalog/handler"
-	"github.com/tinhtn1508/edge-computing-for-monitor/fog-node/go-catalog/psqlclient"
+	"github.com/tinhtn1508/edge-computing-for-monitor/fog-node/go-catalog/psqlprocessor"
 )
 
 var log *zap.SugaredLogger
@@ -22,26 +22,23 @@ var globalContext context.Context
 var rootCmd = &cobra.Command{
 	Use: "",
 	Run: func(cmd *cobra.Command, args []string) {
-		sqlClient := psqlclient.NewPsqlClient(psqlclient.PsqlDeps{
+		psqlProcessor := psqlprocessor.NewPsqlProcessor(psqlprocessor.PsqlProcessorDeps{
 			Log:    log,
 			Ctx:    globalContext,
 			Config: config.GetConfig().PsqlConfig,
 		})
 
-		if err := sqlClient.Start(); err != nil {
-			log.Fatalf("Failed to init DB: %s", err)
-		}
-
 		apiHandler := handler.NewHandler(handler.HandlerDeps{
-			Log:     log,
-			DBCheck: sqlClient.Isok,
+			Log:          log,
+			DBCheck:      psqlProcessor.CheckDB,
+			DBGetContact: psqlProcessor.GetWorkers,
 		})
 
 		e := echo.New()
 
 		g := e.Group("/api/v1")
 		g.GET("/health", apiHandler.HealthCheck)
-		// g.GET("/contact")
+		g.GET("/contact", apiHandler.GetContact)
 
 		e.Start(fmt.Sprintf(":%d", config.GetConfig().ServerConfig.Port))
 		log.Fatal("It should not come here!")

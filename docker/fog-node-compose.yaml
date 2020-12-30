@@ -55,6 +55,8 @@ services:
     networks:
       - fog
     restart: always
+    ports:
+      - "8080:8080"
     volumes:
       - ./../fog-node/go-catalog:/app
     depends_on:

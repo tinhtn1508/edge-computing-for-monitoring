@@ -22,7 +22,7 @@ type PsqlConfig struct {
 	DBname              string        `mapstructure:"dbname"`
 	QueryTimeout        time.Duration `mapstructure:"querytimeout"`
 	HealthcheckInterval time.Duration `mapstructure:"healthcheck_interval"`
-	InitSchema          string        `mapstructure:"init_schema"`
+	InitSchema          []string      `mapstructure:"init_schema"`
 }
 
 func (pc *PsqlConfig) GetInfo() string {
@@ -55,7 +55,7 @@ type psqlClient struct {
 	username            string
 	password            string
 	dbname              string
-	initSchema          string
+	initSchema          []string
 	querytimeout        time.Duration
 	healthcheckInterval time.Duration
 	iamok               bool
@@ -111,7 +111,7 @@ func (pc *psqlClient) startHealthcheck() {
 }
 
 func (pc *psqlClient) ExecFromFile(path string) error {
-	query, err := ioutil.ReadFile(pc.initSchema)
+	query, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
 	}
@@ -123,11 +123,14 @@ func (pc *psqlClient) ExecFromFile(path string) error {
 }
 
 func (pc *psqlClient) Start() error {
-	if pc.initSchema != "" {
-		if err := pc.ExecFromFile(pc.initSchema); err != nil {
-			return err
+	if len(pc.initSchema) > 0 {
+		for _, schema := range pc.initSchema {
+			if err := pc.ExecFromFile(schema); err != nil {
+				return err
+			}
 		}
 	}
+
 	pc.startHealthcheck()
 	return nil
 }

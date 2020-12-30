@@ -10,7 +10,7 @@ import (
 )
 
 type DBCheckFunc func() bool
-type DBGetContactFunc func(req types.GetContactRequest) types.GetContactResponse
+type DBGetContactFunc func(string, string) types.GetContactResponse
 
 type HandlerDeps struct {
 	Log          *zap.SugaredLogger
@@ -28,7 +28,7 @@ func NewHandler(deps HandlerDeps) IHandler {
 
 type IHandler interface {
 	HealthCheck(ctx echo.Context) error
-	// GetContact(ctx echo.Context) error
+	GetContact(ctx echo.Context) error
 }
 
 type handler struct {
@@ -46,4 +46,15 @@ func (h *handler) HealthCheck(ctx echo.Context) error {
 		return ctx.String(http.StatusOK, "OK")
 	}
 	return ctx.String(http.StatusInternalServerError, "Server Error")
+}
+
+func (h *handler) GetContact(ctx echo.Context) error {
+	req := new(types.GetContactRequest)
+	if err := ctx.Bind(req); err != nil {
+		ctx.String(http.StatusBadRequest, "Bad Request")
+		return err
+	}
+	resp := h.dbGetContact(req.Sensor, req.EdgeNode)
+	ctx.JSON(http.StatusOK, resp)
+	return nil
 }
