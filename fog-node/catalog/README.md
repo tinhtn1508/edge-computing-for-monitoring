@@ -1,5 +1,8 @@
 # Catalog services
 
+## [Schema Database](https://dbdiagram.io/d/5f993e883a78976d7b797f8d)
+
+
 ## Node.js
 
 | Software | Minimum version |
@@ -35,7 +38,7 @@ docker run \
   -e POSTGRES_DB=catalog \
   -e POSTGRES_USER=catalog \
   -e POSTGRES_PASSWORD=catalog \
-  -v /Users/hungpham/Documents/Master/HKIII/BIGDATA/source/edge-computing-for-monitor/fog-node/catalog/data:/var/lib/postgresql/data \
+  -v ${PWD}/data:/var/lib/postgresql/data \
   -p 5432:5432 \
   -d postgres
 ```
@@ -64,3 +67,17 @@ $ docker inspect dev-postgres -f "{{json .NetworkSettings.Networks }}"
 ```
 "IPAddress of server PostgreSQL":"172.17.0.2"
 ```
+
+#### Backup Database using pg_dump
+```
+docker exec -t dev-postgres pg_dumpall -c -U catalog > dump_$(date +%Y-%m-%d_%H_%M_%S).sql
+```
+
+#### Restore Database using psql
+```
+docker exec -i dev-postgres psql --username catalog --password catalog catalog < dump_2020-11-08_14_18_46.sql
+```
+
+
+npm install
+
