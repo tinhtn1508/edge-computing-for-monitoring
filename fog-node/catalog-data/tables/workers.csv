@@ -1,0 +1,7 @@
+id,group_id,name,email,phone,start_working_hour,end_working_hour
+1,1,tuantran,tuantran@congty.com,0909123456,00:00:00,12:00:00
+2,1,hungpham,hungpham@congty.com,0909123457,12:00:00,24:00:00
+3,2,tinhnguyen,tinhnguyen@congty.com,0909123458,00:00:00,12:00:00
+4,2,duongnguyen,duongnguyen@congty.com,0909123459,12:00:00,24:00:00
+5,1,khangdoan,khangdoan@conhty.com,0909123460,00:00:00,12:00:00
+6,2,hieuvu,hieuvu@conhty.com,0909123461,00:00:00,12:00:00

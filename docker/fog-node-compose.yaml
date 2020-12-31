@@ -34,6 +34,35 @@ services:
       - fog
     restart: always
 
+  fog-psql:
+    image: "postgres:alpine"
+    networks:
+      fog: 
+        ipv4_address: 172.30.0.20
+    restart: always
+    ports: 
+      - "5432:5432"
+    env_file: 
+      - postgres.env
+    healthcheck:
+      test: "/bin/sh -c pg_isready -U postgres"
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  fog-catalog:
+    image: trhoangtuan96/fog-processor:latest
+    networks:
+      - fog
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./../fog-node/go-catalog:/app
+    depends_on:
+      fog-psql:
+        condition: service_healthy
+
 networks:
   fog:
     driver: bridge
