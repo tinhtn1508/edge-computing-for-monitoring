@@ -95,7 +95,7 @@ func (r *redisClient) SetKeyString(key string, value string) error {
 	defer cancel()
 	var err error
 	if r.tll > 0 {
-		_, err = timeoutClient.Set(key, value, r.tll.Milliseconds()).Result()
+		_, err = timeoutClient.Set(key, value, r.tll).Result()
 	} else {
 		_, err = timeoutClient.Set(key, value, 0).Result()
 	}
