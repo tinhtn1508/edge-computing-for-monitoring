@@ -17,7 +17,7 @@ type RedisClient interface {
 	Start() error
 	Stop()
 	SetKeyString(key string, value string) error
-	GetKeyString(ctx context.Context, key string, postProcessing RedisGetPostProcessingFunction) (string, error)
+	GetKeyString(key string, postProcessing RedisGetPostProcessingFunction) (string, error)
 }
 
 // RedisClientDeps ...
@@ -103,7 +103,7 @@ func (r *redisClient) SetKeyString(key string, value string) error {
 	return err
 }
 
-func (r *redisClient) GetKeyString(ctx context.Context, key string, postProcessing RedisGetPostProcessingFunction) (string, error) {
+func (r *redisClient) GetKeyString(key string, postProcessing RedisGetPostProcessingFunction) (string, error) {
 	if !r.checkClient() {
 		return "", fmt.Errorf("error while connecting to redis")
 	}
