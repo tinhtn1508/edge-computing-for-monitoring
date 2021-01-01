@@ -49,6 +49,7 @@ func NewRedisConnector(deps RedisClientDeps) RedisClient {
 	instance.alive 		 = false
 	instance.tll 		 = deps.TLL
 	instance.timeout 	 = deps.Timeout
+	instance.ctx 		 = deps.Ctx
 	return &instance
 }
 
