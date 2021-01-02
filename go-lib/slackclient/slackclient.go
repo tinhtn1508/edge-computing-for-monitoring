@@ -49,8 +49,8 @@ func (sc *slackclient) Send(channel string, message string, email string) error 
 	defer cancel()
 
 	user, _err := sc.client.GetUserByEmailContext(timeoutCtx, email)
-	tag := fmt.Sprintf("<@%s>", user.ID)
 	if _err == nil {
+		tag := fmt.Sprintf("<@%s>", user.ID)
 		message = fmt.Sprintf(message, tag)
 	} else {
 		message = fmt.Sprintf(message, strings.Split(email, "@")[0])
