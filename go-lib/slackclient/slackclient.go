@@ -22,7 +22,7 @@ type SlackClientConf struct {
 	Timeout time.Duration
 }
 
-type slacklient struct {
+type slackclient struct {
 	client  *slack.Client
 	log     *zap.SugaredLogger
 	ctx     context.Context
@@ -31,11 +31,11 @@ type slacklient struct {
 
 // NewSlackClient ...
 func NewSlackClient(conf SlackClientConf) ISlackClient {
-	return &slacklient{
+	return &slackclient{
 		log:     conf.Log,
 		client:  slack.New(conf.Token),
 		ctx:     conf.Ctx,
-		timeout: time.Duration,
+		timeout: conf.Timeout,
 	}
 }
 
