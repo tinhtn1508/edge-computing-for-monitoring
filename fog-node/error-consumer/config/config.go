@@ -12,15 +12,22 @@ import (
 
 // _CatalogConfig ...
 type _CatalogConfig struct {
-	URL 	string			`mapstructure:"string"`
+	URL 	string			`mapstructure:"url"`
 	Timeout time.Duration	`mapstructure:"timeout"`
+}
+
+type _SlackBotConfig struct {
+	Token 	string			`mapstructure:"token"`
+	Timeout time.Duration	`mapstructure:"timeout"`
+	Channel string			`mapstructure:"channel"`
 }
 
 // Config holds all the configurations of the tool
 type Config struct {
-	KafkaConfig kafka.KafkaConfig `mapstructure:"kafka"`
-	RedisConfig redis.RedisConfig `mapstructure:"redis"`
-	CatalogConfig _CatalogConfig  `mapstructure:"catalog"`
+	KafkaConfig    kafka.KafkaConfig  `mapstructure:"kafka"`
+	RedisConfig    redis.RedisConfig  `mapstructure:"redis"`
+	CatalogConfig  _CatalogConfig     `mapstructure:"catalog"`
+	SlackBotConfig _SlackBotConfig    `mapstructure:"slackbot"`
 }
 
 // GetKafkaHost produces kafka hostname
