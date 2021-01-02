@@ -14,6 +14,7 @@ import (
 	"github.com/tinhtn1508/edge-computing-for-monitor/fog-node/error-consumer/core"
 	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/kafka"
 	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/redis"
+	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/slackclient"
 	"go.uber.org/zap"
 )
 
@@ -37,13 +38,23 @@ var rootCmd = &cobra.Command{
 			log.Fatalf("error while starting redis client")
 		}
 
+		slackBot := slackclient.NewSlackClient(slackclient.SlackClientConf{
+			Log: 	 log,
+			Ctx:	 globalContext,
+			Token:	 config.GetConfig().SlackBotConfig.Token,
+			Timeout: config.GetConfig().SlackBotConfig.Timeout,
+		})
+
 		errConsumerCore := core.NewCoreErrorConsumer(core.CoreErrorConsumerConf{
 			Log:			log,
 			RedisSetFunc: 	redisClient.SetKeyString,
 			RedisGetFunc:	redisClient.GetKeyString,
 			ContactURL: 	config.GetConfig().CatalogConfig.URL,
 			ContactTimeout: config.GetConfig().CatalogConfig.Timeout,
+			SlackSendFunc:  slackBot.Send,
+			SlackChannel:	config.GetConfig().SlackBotConfig.Channel,
 		})
+		errConsumerCore.Start()
 
 		kafkaClient := kafka.NewTcpKafkaConnector(kafka.TcpKafkaConnectorDeps{
 			Log:     log,
@@ -75,8 +86,6 @@ var rootCmd = &cobra.Command{
 		if err := kafkaConsumer.StartConsuming(); err != nil {
 			log.Fatalf("error while start consuming kafka messages")
 		}
-
-		errConsumerCore.Start()
 
 		for {
 			time.Sleep(1 * time.Second)

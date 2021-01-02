@@ -79,7 +79,7 @@ services:
     volumes:
       - ./../edge-node/processor:/app
     environment:
-      EDGE_NODE_NAME: "edge-node-q10"
+      EDGE_NODE_NAME: "edge_node_1"
 
   edge-influxdb:
     image: "influxdb"

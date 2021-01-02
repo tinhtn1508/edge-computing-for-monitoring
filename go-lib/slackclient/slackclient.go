@@ -3,6 +3,7 @@ package slackclient
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/slack-go/slack"
@@ -11,7 +12,7 @@ import (
 
 // ISlackClient ...
 type ISlackClient interface {
-	Send(string, string) error
+	Send(string, string, string) error
 }
 
 // SlackClientConf ...
@@ -39,13 +40,21 @@ func NewSlackClient(conf SlackClientConf) ISlackClient {
 	}
 }
 
-func (sc *slackclient) Send(channel string, message string) error {
-	if channel == "" || message == "" {
-		return fmt.Errorf("Channel or message not found")
+func (sc *slackclient) Send(channel string, message string, email string) error {
+	if channel == "" || message == "" || email == "" {
+		return fmt.Errorf("Channel or message or email not found")
 	}
 
 	timeoutCtx, cancel := context.WithTimeout(sc.ctx, sc.timeout)
 	defer cancel()
+
+	user, _err := sc.client.GetUserByEmailContext(timeoutCtx, email)
+	tag := fmt.Sprintf("<@%s>", user.ID)
+	if _err == nil {
+		message = fmt.Sprintf(message, tag)
+	} else {
+		message = fmt.Sprintf(message, strings.Split(email, "@")[0])
+	}
 
 	channelID, timestamp, err := sc.client.PostMessageContext(
 		timeoutCtx,
@@ -56,6 +65,7 @@ func (sc *slackclient) Send(channel string, message string) error {
 	if err != nil {
 		return fmt.Errorf("Error while sending message: %s", err)
 	}
+
 	sc.log.Infof("Message successfully sent to channel %s at %s", channelID, timestamp)
 	return nil
 }
