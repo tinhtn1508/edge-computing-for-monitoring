@@ -11,7 +11,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/tinhtn1508/edge-computing-for-monitor/fog-node/error-consumer/config"
+	"github.com/tinhtn1508/edge-computing-for-monitor/fog-node/error-consumer/core"
 	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/kafka"
+	"github.com/tinhtn1508/edge-computing-for-monitor/go-lib/redis"
 	"go.uber.org/zap"
 )
 
@@ -22,6 +24,26 @@ var rootCmd = &cobra.Command{
 	Use: "",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Infof("hello")
+
+		redisClient := redis.NewRedisConnector(redis.RedisClientDeps{
+			Log:	 log,
+			Ctx:	 globalContext,
+			Addr:	 config.GetConfig().RedisConfig.Addr,
+			TLL:	 config.GetConfig().RedisConfig.TLL,
+			Timeout: config.GetConfig().RedisConfig.Timeout,
+		})
+
+		if err := redisClient.Start(); err != nil {
+			log.Fatalf("error while starting redis client")
+		}
+
+		errConsumerCore := core.NewCoreErrorConsumer(core.CoreErrorConsumerConf{
+			Log:			log,
+			RedisSetFunc: 	redisClient.SetKeyString,
+			RedisGetFunc:	redisClient.GetKeyString,
+			ContactURL: 	config.GetConfig().CatalogConfig.URL,
+			ContactTimeout: config.GetConfig().CatalogConfig.Timeout,
+		})
 
 		kafkaClient := kafka.NewTcpKafkaConnector(kafka.TcpKafkaConnectorDeps{
 			Log:     log,
@@ -43,7 +65,7 @@ var rootCmd = &cobra.Command{
 			Brokers:   config.GetConfig().KafkaConfig.Brokers,
 			Partition: config.GetConfig().KafkaConfig.Partition,
 			Offset:    -1,
-			// Consume:   processor.HandleMessage,
+			Consume:   errConsumerCore.HandleMessage,
 		})
 
 		if err := kafkaConsumer.Init(); err != nil {
@@ -53,6 +75,8 @@ var rootCmd = &cobra.Command{
 		if err := kafkaConsumer.StartConsuming(); err != nil {
 			log.Fatalf("error while start consuming kafka messages")
 		}
+
+		errConsumerCore.Start()
 
 		for {
 			time.Sleep(1 * time.Second)

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo"
@@ -49,12 +50,15 @@ func (h *handler) HealthCheck(ctx echo.Context) error {
 }
 
 func (h *handler) GetContact(ctx echo.Context) error {
-	req := new(types.GetContactRequest)
-	if err := ctx.Bind(req); err != nil {
+	sensor := ctx.QueryParam("sensor")
+	edgeNode := ctx.QueryParam("edgenode")
+
+	if len(sensor) == 0 || len(edgeNode) == 0 {
 		ctx.String(http.StatusBadRequest, "Bad Request")
-		return err
-	}
-	resp := h.dbGetContact(req.Sensor, req.EdgeNode)
+		return fmt.Errorf("invalid param")
+	} 
+
+	resp := h.dbGetContact(sensor, edgeNode)
 	ctx.JSON(http.StatusOK, resp)
 	return nil
 }
