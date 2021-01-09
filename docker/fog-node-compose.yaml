@@ -6,8 +6,8 @@ services:
       - fog
       - docker_broker
     restart: always
-    volumes:
-      - ./../fog-node/processor:/app
+    # volumes:
+    #   - ./../fog-node/processor:/app
     depends_on:
       kafka:
         condition: service_healthy
@@ -49,33 +49,36 @@ services:
       interval: 10s
       timeout: 10s
       retries: 10
+
   fog-catalog:
-    image: trhoangtuan96/fog-processor:latest
+    image: trhoangtuan96/fog-go-catalog:latest
     networks:
       - fog
     restart: always
     ports:
       - "8080:8080"
-    volumes:
-      - ./../fog-node/go-catalog:/app
+    # volumes:
+    #   - ./../fog-node/go-catalog:/app
     depends_on:
       fog-psql:
         condition: service_healthy
+
   fog-redis:
-    image:  "redis:latest"
+    image:  "redis:alpine"
     networks:
       - fog
     restart: always
     ports:
       - "6379:6379"
+
   fog-error-consumer:
-    image: "duongtomho/fog-error-consumer:latest"
+    image: "trhoangtuan96/fog-error-consumer:latest"
     networks:
       - fog
       - docker_broker
     restart: always
-    volumes:
-      - ./../fog-node/error-consumer:/app
+    # volumes:
+    #   - ./../fog-node/error-consumer:/app
     depends_on:
       kafka:
         condition: service_healthy

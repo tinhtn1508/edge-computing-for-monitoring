@@ -76,8 +76,8 @@ services:
       edge-influxdb:
         condition: service_healthy
     restart: always
-    volumes:
-      - ./../edge-node/processor:/app
+    # volumes:
+    #   - ./../edge-node/processor:/app
     environment:
       EDGE_NODE_NAME: "edge_node_1"
 
