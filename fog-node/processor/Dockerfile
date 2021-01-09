@@ -1,5 +1,5 @@
 FROM golang:1.14-alpine
 COPY . /app
-RUN cd /app && go build .
+RUN cd /app && go build -o processor
 WORKDIR /app
-CMD ["go", "run", "."]
+CMD ./processor
